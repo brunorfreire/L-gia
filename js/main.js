@@ -362,7 +362,8 @@ function showToast(message) {
 function initAssessmentModal() {
   const modalBackdrop = document.getElementById('assessmentModal') || document.getElementById('bookingModal');
   const closeButton = document.getElementById('closeAssessmentModal') || document.getElementById('closeBookingModal');
-  const openButtons = document.querySelectorAll('.open-assessment-modal, .open-booking-modal');
+  const triggerSelectors = '.open-assessment-modal, .open-booking-modal, [data-open-assessment]';
+  const openButtons = document.querySelectorAll(triggerSelectors);
   const form = document.getElementById('assessmentForm') || document.getElementById('quickBookingForm');
 
   if (!modalBackdrop || !closeButton) return;
@@ -382,15 +383,46 @@ function initAssessmentModal() {
   const phoneError = document.getElementById('phoneError');
 
   // Cartões de escolha das perguntas
-  const choiceCards = document.querySelectorAll('.assessment-choice-card');
+  const choiceCards = document.querySelectorAll('.assessment-choice-card, .assessment-option');
+
+  // Armazena o último botão focado para restaurar o foco ao fechar
+  let lastActiveTrigger = null;
 
   // Função para abrir o modal
-  function openModal(defaultRegion = '') {
-    modalBackdrop.classList.add('active');
+  function openModal(defaultRegion = '', triggerElement = null) {
+    if (triggerElement) {
+      lastActiveTrigger = triggerElement;
+    } else if (document.activeElement && document.activeElement !== document.body) {
+      lastActiveTrigger = document.activeElement;
+    }
+
+    // Fecha o menu mobile se estiver aberto
+    const mobilePanel = document.getElementById('mobileNavPanel');
+    const mobileOverlay = document.getElementById('mobileNavOverlay');
+    const mobileToggle = document.getElementById('mobileMenuToggle');
+    if (mobilePanel && mobilePanel.classList.contains('open')) {
+      mobilePanel.classList.remove('open');
+      if (mobileOverlay) mobileOverlay.classList.remove('open');
+      if (mobileToggle) {
+        mobileToggle.classList.remove('active');
+        mobileToggle.setAttribute('aria-expanded', 'false');
+      }
+      document.body.style.overflow = '';
+    }
+
+    // 1. Sincroniza hidden e display
+    modalBackdrop.removeAttribute('hidden');
+    modalBackdrop.hidden = false;
+    modalBackdrop.style.display = 'flex';
+
+    // 2. Sincroniza aria-hidden
     modalBackdrop.setAttribute('aria-hidden', 'false');
+
+    // 3. Sincroniza classe de exibição
+    modalBackdrop.classList.add('active');
     document.body.classList.add('modal-open');
 
-    // Se houver uma região ou necessidade padrão, seleciona o cartão correspondente
+    // 4. Se houver uma região ou necessidade padrão, seleciona o cartão correspondente
     if (defaultRegion) {
       const targetRadio = document.querySelector(`input[name="region"][value="${defaultRegion}"]`);
       if (targetRadio) {
@@ -399,25 +431,53 @@ function initAssessmentModal() {
       }
     }
 
-    // Garante que o scroll do corpo do modal inicie no topo
-    const modalBody = modalBackdrop.querySelector('.assessment-modal-body');
+    // 5. Garante que o scroll do corpo do modal inicie no topo
+    const modalBody = modalBackdrop.querySelector('.assessment-modal-body, .assessment-body');
     if (modalBody) {
       modalBody.scrollTop = 0;
     }
+
+    // 6. Foco acessível no botão fechar
+    setTimeout(() => {
+      if (closeButton && typeof closeButton.focus === 'function') {
+        closeButton.focus();
+      }
+    }, 60);
   }
 
   // Função para fechar o modal
   function closeModal() {
+    // 1. Sincroniza classe de exibição
     modalBackdrop.classList.remove('active');
-    modalBackdrop.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('modal-open');
+
+    // 2. Sincroniza aria-hidden
+    modalBackdrop.setAttribute('aria-hidden', 'true');
+
+    // 3. Sincroniza hidden
+    modalBackdrop.setAttribute('hidden', '');
+    modalBackdrop.hidden = true;
+    modalBackdrop.style.display = 'none';
+
+    // 4. Devolve o foco ao botão que abriu o modal
+    if (lastActiveTrigger && typeof lastActiveTrigger.focus === 'function') {
+      try {
+        lastActiveTrigger.focus();
+      } catch (err) {}
+    }
   }
+
+  // Expor globalmente na window para disparos diretos e compatibilidade total
+  window.openAssessmentModal = function(region = '', trigger = null) {
+    openModal(region, trigger);
+  };
+  window.closeAssessmentModal = closeModal;
 
   // Atualiza classes visuais nos cartões da pergunta especificada
   function updateCardSelection(groupName) {
     const radios = document.querySelectorAll(`input[name="${groupName}"]`);
     radios.forEach((radio) => {
-      const card = radio.closest('.assessment-choice-card');
+      const card = radio.closest('.assessment-choice-card, .assessment-option');
       if (card) {
         if (radio.checked) {
           card.classList.add('selected');
@@ -530,13 +590,23 @@ function initAssessmentModal() {
     });
   }
 
-  // Listeners de abertura
+  // 1. Listeners de abertura diretos em todos os botões identificados
   openButtons.forEach((btn) => {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       const region = btn.getAttribute('data-region') || btn.getAttribute('data-service') || '';
-      openModal(region);
+      openModal(region, btn);
     });
+  });
+
+  // 2. Delegação global de eventos no document para capturar qualquer elemento de abertura
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest(triggerSelectors);
+    if (trigger) {
+      e.preventDefault();
+      const region = trigger.getAttribute('data-region') || trigger.getAttribute('data-service') || '';
+      openModal(region, trigger);
+    }
   });
 
   // Listener de fechamento
@@ -600,18 +670,6 @@ function initAssessmentModal() {
       const goal = goalChecked ? goalChecked.value : 'Aliviar a dor e me movimentar melhor';
 
       // Monta a mensagem rigorosamente no formato especificado:
-      // “Olá, equipe do Espaço Ligia de Mayor!
-      // Preenchi o questionário no site e gostaria de solicitar minha avaliação.
-      //
-      // Nome: [nome]
-      // WhatsApp: [telefone]
-      // Região ou necessidade: [resposta]
-      // Tempo de desconforto: [resposta]
-      // Intensidade do desconforto: [valor]/10
-      // Principal objetivo: [resposta]
-      //
-      // Gostaria de saber os horários disponíveis para minha avaliação individual.”
-
       const formattedPhone = phoneInput ? phoneInput.value.trim() : rawPhone;
 
       const message = `Olá, equipe do Espaço Ligia de Mayor!\n` +
@@ -636,7 +694,17 @@ function initAssessmentModal() {
       }, 300);
 
       // Abre no WhatsApp sem persistência em localStorage ou logs
-      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      try {
+        const link = document.createElement('a');
+        link.href = whatsappUrl;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (err) {
+        window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      }
     });
   }
 }
