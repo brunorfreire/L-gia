@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initFaqAccordion();
   initSmoothScroll();
   initCopyAddress();
-  initBookingModal();
+  initAssessmentModal();
   initDynamicYear();
 });
 
@@ -172,8 +172,6 @@ function initMobileMenu() {
   if (!toggleBtn || !panel || !overlay) return;
 
   function openMenu() {
-    const menuTop = document.querySelector('.site-header')?.getBoundingClientRect().bottom || 90;
-    [panel, overlay].forEach(el => { el.style.top = menuTop + 'px'; el.style.height = 'calc(100dvh - ' + menuTop + 'px)'; });
     toggleBtn.classList.add('active');
     panel.classList.add('open');
     overlay.classList.add('open');
@@ -353,77 +351,294 @@ function showToast(message) {
 }
 
 /**
- * 6. Modal Interativo de Agendamento Personalizado
+ * 6. Modal Interativo de Avaliação Individual (Questionário Contínuo)
+ * - Inspirado no fluxo contínuo de alta conversão adaptado ao Espaço Lígia de Mayor
+ * - Cartões de seleção com destaque turquesa e indicador visual
+ * - Escala de desconforto de 0 a 10 com display interativo e marcadores rápidos
+ * - Máscara automática de telefone celular brasileiro (DDD + 9 dígitos)
+ * - Mensagem formatada enviada diretamente para o WhatsApp oficial 5521997172737
+ * - Não armazena dados em localStorage, analytics ou logs
  */
-function initBookingModal() {
-  const backdrop = document.getElementById('bookingModal');
-  const card = backdrop?.querySelector('.assessment-card');
-  const close = document.getElementById('closeBookingModal');
-  const form = document.getElementById('quickBookingForm');
-  if (!backdrop || !card || !close || !form) return;
-  let opener, previousOverflow;
-  function hide() {
-    backdrop.classList.remove('active');
-    backdrop.hidden = true;
-    backdrop.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = previousOverflow || '';
-    opener?.focus();
+function initAssessmentModal() {
+  const modalBackdrop = document.getElementById('assessmentModal') || document.getElementById('bookingModal');
+  const closeButton = document.getElementById('closeAssessmentModal') || document.getElementById('closeBookingModal');
+  const openButtons = document.querySelectorAll('.open-assessment-modal, .open-booking-modal');
+  const form = document.getElementById('assessmentForm') || document.getElementById('quickBookingForm');
+
+  if (!modalBackdrop || !closeButton) return;
+
+  // Elementos da Escala de Dor/Desconforto
+  const painInput = document.getElementById('painRangeInput');
+  const painCircle = document.getElementById('painScoreCircle');
+  const painText = document.getElementById('painScoreText');
+  const painHelp = document.getElementById('painScoreHelp');
+  const painButtons = document.querySelectorAll('.pain-num-btn');
+
+  // Elementos do formulário de contato
+  const nameInput = document.getElementById('assessmentUserName');
+  const phoneInput = document.getElementById('assessmentUserPhone');
+  const consentInput = document.getElementById('assessmentUserConsent');
+  const nameError = document.getElementById('nameError');
+  const phoneError = document.getElementById('phoneError');
+
+  // Cartões de escolha das perguntas
+  const choiceCards = document.querySelectorAll('.assessment-choice-card');
+
+  // Função para abrir o modal
+  function openModal(defaultRegion = '') {
+    modalBackdrop.classList.add('active');
+    modalBackdrop.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+
+    // Se houver uma região ou necessidade padrão, seleciona o cartão correspondente
+    if (defaultRegion) {
+      const targetRadio = document.querySelector(`input[name="region"][value="${defaultRegion}"]`);
+      if (targetRadio) {
+        targetRadio.checked = true;
+        updateCardSelection('region');
+      }
+    }
+
+    // Garante que o scroll do corpo do modal inicie no topo
+    const modalBody = modalBackdrop.querySelector('.assessment-modal-body');
+    if (modalBody) {
+      modalBody.scrollTop = 0;
+    }
   }
-  document.querySelectorAll('.open-booking-modal').forEach(button => {
-    button.addEventListener('click', event => {
-      event.preventDefault();
-      opener = button;
-      previousOverflow = document.body.style.overflow;
-      const select = document.getElementById('modalServiceSelect');
-      select.value = button.dataset.service || '';
-      backdrop.hidden = false;
-      backdrop.setAttribute('aria-hidden', 'false');
-      backdrop.classList.add('active');
-      document.body.style.overflow = 'hidden';
-      form.scrollTop = 0;
-      card.focus();
+
+  // Função para fechar o modal
+  function closeModal() {
+    modalBackdrop.classList.remove('active');
+    modalBackdrop.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+  }
+
+  // Atualiza classes visuais nos cartões da pergunta especificada
+  function updateCardSelection(groupName) {
+    const radios = document.querySelectorAll(`input[name="${groupName}"]`);
+    radios.forEach((radio) => {
+      const card = radio.closest('.assessment-choice-card');
+      if (card) {
+        if (radio.checked) {
+          card.classList.add('selected');
+        } else {
+          card.classList.remove('selected');
+        }
+      }
+    });
+  }
+
+  // Event listener para seleção dos cartões
+  choiceCards.forEach((card) => {
+    const radio = card.querySelector('input[type="radio"]');
+    if (!radio) return;
+
+    radio.addEventListener('change', () => {
+      if (radio.checked) {
+        updateCardSelection(radio.name);
+      }
     });
   });
-  close.addEventListener('click', hide);
-  backdrop.addEventListener('click', event => { if (event.target === backdrop) hide(); });
-  document.addEventListener('keydown', event => {
-    if (backdrop.hidden) return;
-    if (event.key === 'Escape') hide();
-    if (event.key === 'Tab') {
-      const items = Array.from(card.querySelectorAll('button, input, select, a[href], textarea')).filter(el => !el.disabled && el.getClientRects().length);
-      const first = items[0], last = items[items.length - 1];
-      if (event.shiftKey && (document.activeElement === first || document.activeElement === card)) { event.preventDefault(); last?.focus(); }
-      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === card)) { event.preventDefault(); first?.focus(); }
+
+  // Atualização interativa da Escala de Desconforto (0 a 10)
+  function updatePainScale(value) {
+    const val = Math.min(10, Math.max(0, parseInt(value, 10) || 0));
+
+    if (painCircle) painCircle.textContent = val;
+
+    let badgeText = `Nível ${val} · Moderado`;
+    let helpText = 'Desconforto que incomoda em tarefas cotidianas';
+
+    if (val === 0) {
+      badgeText = 'Nível 0 · Sem dor';
+      helpText = 'Não sinto dor no momento, foco em prevenção e bem-estar';
+    } else if (val >= 1 && val <= 3) {
+      badgeText = `Nível ${val} · Leve`;
+      helpText = 'Desconforto pontual que não interfere nas atividades diárias';
+    } else if (val >= 4 && val <= 6) {
+      badgeText = `Nível ${val} · Moderado`;
+      helpText = 'Desconforto perceptível que limita o rendimento no dia a dia';
+    } else if (val >= 7 && val <= 9) {
+      badgeText = `Nível ${val} · Intenso`;
+      helpText = 'Dor expressiva com restrições importantes de movimento';
+    } else if (val === 10) {
+      badgeText = 'Nível 10 · Muito intenso';
+      helpText = 'Dor aguda incapacitante com forte limitação postural e física';
+    }
+
+    if (painText) painText.textContent = badgeText;
+    if (painHelp) painHelp.textContent = helpText;
+
+    // Atualiza o preenchimento em degradê do slider (turquesa preenchido)
+    if (painInput) {
+      const pct = (val / 10) * 100;
+      painInput.style.background = `linear-gradient(to right, #0E9AA7 0%, #0E9AA7 ${pct}%, #E2E8F0 ${pct}%, #E2E8F0 100%)`;
+      if (painInput.value !== String(val)) {
+        painInput.value = val;
+      }
+    }
+
+    // Atualiza botão numérico ativo
+    painButtons.forEach((btn) => {
+      const btnVal = parseInt(btn.getAttribute('data-value'), 10);
+      btn.classList.toggle('active', btnVal === val);
+    });
+  }
+
+  // Listener no slider
+  if (painInput) {
+    painInput.addEventListener('input', (e) => {
+      updatePainScale(e.target.value);
+    });
+    // Inicialização da escala
+    updatePainScale(painInput.value || 5);
+  }
+
+  // Listener nos botões numéricos rápidos
+  painButtons.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const val = btn.getAttribute('data-value');
+      updatePainScale(val);
+    });
+  });
+
+  // Máscara amigável para telefone/WhatsApp brasileiro: (XX) XXXXX-XXXX
+  if (phoneInput) {
+    phoneInput.addEventListener('input', (e) => {
+      let value = e.target.value.replace(/\D/g, '').substring(0, 11);
+      if (value.length > 10) {
+        // Formato com 9 dígitos: (XX) XXXXX-XXXX
+        value = value.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+      } else if (value.length > 6) {
+        // Formato intermediário: (XX) XXXX-XXXX
+        value = value.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '($1) $2-$3');
+      } else if (value.length > 2) {
+        value = value.replace(/^(\d{2})(\d{0,5})$/, '($1) $2');
+      } else if (value.length > 0) {
+        value = value.replace(/^(\d*)$/, '($1');
+      }
+      e.target.value = value;
+
+      if (phoneError) phoneError.classList.remove('visible');
+    });
+  }
+
+  if (nameInput) {
+    nameInput.addEventListener('input', () => {
+      if (nameError) nameError.classList.remove('visible');
+    });
+  }
+
+  // Listeners de abertura
+  openButtons.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const region = btn.getAttribute('data-region') || btn.getAttribute('data-service') || '';
+      openModal(region);
+    });
+  });
+
+  // Listener de fechamento
+  closeButton.addEventListener('click', closeModal);
+
+  // Fechar ao clicar no backdrop escuro
+  modalBackdrop.addEventListener('click', (e) => {
+    if (e.target === modalBackdrop) {
+      closeModal();
     }
   });
-  const pain = document.getElementById('painLevel');
-  pain.addEventListener('input', () => { document.getElementById('painValue').textContent = pain.value + '/10'; });
-  const phone = document.getElementById('clientPhone');
-  phone.addEventListener('input', () => phone.setCustomValidity(''));
-  form.addEventListener('submit', event => {
-    event.preventDefault();
-    const digits = phone.value.replace(/\D/g, '');
-    if (digits.length < 10 || digits.length > 13) {
-      phone.setCustomValidity('Informe um telefone com DDD válido.');
-      phone.reportValidity();
-      return;
+
+  // Fechar com a tecla ESC
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modalBackdrop.classList.contains('active')) {
+      closeModal();
     }
-    const data = new FormData(form);
-    const text = [
-      'Olá, equipe do Espaço Ligia de Mayor! Gostaria de solicitar minha avaliação.',
-      '',
-      '*Nome:* ' + data.get('name').trim(),
-      '*WhatsApp / telefone:* ' + phone.value.trim(),
-      '*Região / necessidade:* ' + data.get('region'),
-      '*Tempo de desconforto:* ' + data.get('duration'),
-      '*Intensidade (0 a 10):* ' + data.get('pain') + '/10',
-      '*Principal objetivo:* ' + data.get('goal'),
-      '*Modalidade de interesse:* ' + (document.getElementById('modalServiceSelect').value || 'Quero orientação na avaliação'),
-      '',
-      'Quero saber os horários disponíveis para minha avaliação individual.'
-    ].join('\n');
-    window.location.assign('https://wa.me/5521997172737?text=' + encodeURIComponent(text));
   });
+
+  // Envio do formulário formatado para o WhatsApp oficial
+  if (form) {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      let hasError = false;
+
+      // Validação do Nome
+      const name = nameInput ? nameInput.value.trim() : '';
+      if (!name || name.length < 2) {
+        if (nameError) nameError.classList.add('visible');
+        if (nameInput) nameInput.focus();
+        hasError = true;
+      }
+
+      // Validação do WhatsApp (mínimo 10 dígitos com DDD)
+      const rawPhone = phoneInput ? phoneInput.value.replace(/\D/g, '') : '';
+      if (!rawPhone || rawPhone.length < 10) {
+        if (phoneError) phoneError.classList.add('visible');
+        if (!hasError && phoneInput) phoneInput.focus();
+        hasError = true;
+      }
+
+      // Validação do Consentimento
+      if (consentInput && !consentInput.checked) {
+        showToast('Por favor, confirme a concordância para prosseguir ao WhatsApp.');
+        hasError = true;
+      }
+
+      if (hasError) return;
+
+      // Coleta das respostas
+      const regionChecked = document.querySelector('input[name="region"]:checked');
+      const region = regionChecked ? regionChecked.value : 'Geral';
+
+      const durationChecked = document.querySelector('input[name="duration"]:checked');
+      const duration = durationChecked ? durationChecked.value : 'Recente';
+
+      const painLevel = painInput ? painInput.value : '5';
+
+      const goalChecked = document.querySelector('input[name="goal"]:checked');
+      const goal = goalChecked ? goalChecked.value : 'Aliviar a dor e me movimentar melhor';
+
+      // Monta a mensagem rigorosamente no formato especificado:
+      // “Olá, equipe do Espaço Ligia de Mayor!
+      // Preenchi o questionário no site e gostaria de solicitar minha avaliação.
+      //
+      // Nome: [nome]
+      // WhatsApp: [telefone]
+      // Região ou necessidade: [resposta]
+      // Tempo de desconforto: [resposta]
+      // Intensidade do desconforto: [valor]/10
+      // Principal objetivo: [resposta]
+      //
+      // Gostaria de saber os horários disponíveis para minha avaliação individual.”
+
+      const formattedPhone = phoneInput ? phoneInput.value.trim() : rawPhone;
+
+      const message = `Olá, equipe do Espaço Ligia de Mayor!\n` +
+        `Preenchi o questionário no site e gostaria de solicitar minha avaliação.\n\n` +
+        `Nome: ${name}\n` +
+        `WhatsApp: ${formattedPhone}\n` +
+        `Região ou necessidade: ${region}\n` +
+        `Tempo de desconforto: ${duration}\n` +
+        `Intensidade do desconforto: ${painLevel}/10\n` +
+        `Principal objetivo: ${goal}\n\n` +
+        `Gostaria de saber os horários disponíveis para minha avaliação individual.`;
+
+      const whatsappNumber = '5521997172737';
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+
+      // Feedback toast amigável e abertura do WhatsApp
+      showToast('Abrindo o WhatsApp com sua mensagem preenchida...');
+
+      // Fecha o modal após confirmação do clique
+      setTimeout(() => {
+        closeModal();
+      }, 300);
+
+      // Abre no WhatsApp sem persistência em localStorage ou logs
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    });
+  }
 }
 
 /**

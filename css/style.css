@@ -865,7 +865,7 @@ ul, ol {
     padding-right: 16px;
   }
 
-  /* Painel semitransparente com a mesma elegância de 86% de opacidade aprovada no desktop */
+  /* Painel semitransparente com a mesma elegância de 78% de opacidade aprovada no desktop */
   .hero-white-card {
     background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(10px);
@@ -1930,17 +1930,31 @@ ul, ol {
 }
 
 /* --------------------------------------------------------------------------
-   18. MODAL DE AGENDAMENTO RÁPIDO INTERATIVO (MOBILE-FIRST)
+   18. MODAL DE AVALIAÇÃO INTERATIVA (QUESTIONÁRIO COM ROLAGEM ÚNICA)
+   - Experiência completa e fluida sem quebra por telas (scroll contínuo)
+   - Cabeçalho sticky com identificação e botão de fechar acessível
+   - Cartões de seleção elegantes com destaque turquesa ao selecionar
+   - Controle dinâmico de desconforto de 0 a 10 com valor atualizado em tempo real
+   - Bloco discreto de próximo passo (sem diagnóstico automático)
+   - Seção de contato com validação e termos de compartilhamento
+   - Botão de envio formatado para WhatsApp oficial (5521997172737)
+   - Totalmente responsivo para 320px, 360px, 390px, 430px e desktop
    -------------------------------------------------------------------------- */
+body.modal-open {
+  overflow: hidden !important;
+  touch-action: none;
+}
+
+.assessment-modal-backdrop,
 .modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(11, 37, 61, 0.65);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background-color: rgba(11, 37, 61, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 2000;
   display: flex;
   align-items: center;
@@ -1948,53 +1962,611 @@ ul, ol {
   padding: 1rem;
   opacity: 0;
   visibility: hidden;
-  transition: all var(--transition-base);
+  transition: opacity 0.25s ease, visibility 0.25s ease;
 }
 
+.assessment-modal-backdrop.active,
 .modal-backdrop.active {
   opacity: 1;
   visibility: visible;
 }
 
+.assessment-modal-card,
 .modal-card {
   background-color: #FFFFFF;
   border-radius: var(--radius-2xl);
-  max-width: 520px;
+  max-width: 580px;
   width: 100%;
   max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: var(--shadow-xl);
-  border: 1px solid var(--color-border);
-  padding: 2.25rem;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  transform: scale(0.95) translateY(10px);
-  transition: transform var(--transition-base);
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(18, 61, 99, 0.28), 0 0 0 1px rgba(18, 61, 99, 0.08);
+  transform: scale(0.96) translateY(12px);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.assessment-modal-backdrop.active .assessment-modal-card,
 .modal-backdrop.active .modal-card {
   transform: scale(1) translateY(0);
 }
 
+/* Cabeçalho Sticky do Modal com Espaço Seguro para Fechamento */
+.assessment-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  padding: 1.25rem 1.5rem 1rem 1.5rem;
+  padding-right: 3.75rem; /* Reserva espaço para o botão fechar */
+}
+
+.assessment-header-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-turquoise);
+  background: var(--color-turquoise-light);
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--radius-full);
+  margin-bottom: 0.4rem;
+}
+
+.assessment-modal-title {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--color-blue-deep);
+  line-height: 1.25;
+  margin: 0 0 0.2rem 0;
+  word-break: break-word;
+}
+
+.assessment-modal-clinic {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.assessment-close-btn,
 .modal-close-btn {
   position: absolute;
-  top: 1.25rem;
+  top: 1rem;
   right: 1.25rem;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background-color: var(--color-bg-muted);
-  color: var(--color-text-muted);
+  background-color: #F1F5F9;
+  color: #475569;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: none;
+  cursor: pointer;
   transition: all var(--transition-fast);
+  z-index: 15;
 }
 
+.assessment-close-btn:hover,
+.assessment-close-btn:focus-visible,
 .modal-close-btn:hover {
-  background-color: var(--color-border);
+  background-color: #E2E8F0;
+  color: var(--color-blue-deep);
+  transform: scale(1.05);
+  outline: none;
+}
+
+/* Única Área Interna de Rolagem Suave */
+.assessment-modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1.5rem;
+  overscroll-behavior: contain;
+}
+
+.assessment-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.assessment-modal-body::-webkit-scrollbar-track {
+  background: #F8FAFC;
+}
+.assessment-modal-body::-webkit-scrollbar-thumb {
+  background-color: #CBD5E1;
+  border-radius: 4px;
+}
+
+/* Caixa de Introdução Acolhedora */
+.assessment-intro-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background-color: #F0F9FA;
+  border-left: 3px solid var(--color-turquoise);
+  padding: 0.875rem 1rem;
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 1.75rem;
+}
+
+.assessment-intro-icon {
+  color: var(--color-turquoise);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.assessment-intro-text {
+  font-size: 0.9375rem;
+  color: #1E3A5F;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Seções das Perguntas */
+.assessment-section {
+  margin-bottom: 2rem;
+}
+
+.assessment-q-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+}
+
+.assessment-q-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-turquoise-light);
+  color: var(--color-turquoise);
+  font-size: 0.875rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.assessment-q-meta {
+  flex: 1;
+}
+
+.assessment-q-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-blue-deep);
+  line-height: 1.35;
+  margin: 0 0 0.125rem 0;
+}
+
+.assessment-q-subtitle {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  display: block;
+}
+
+/* Lista de Cartões de Escolha Elegantes */
+.assessment-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.assessment-choice-card {
+  display: block;
+  cursor: pointer;
+  position: relative;
+  margin: 0;
+  user-select: none;
+}
+
+.assessment-radio-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.assessment-card-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.875rem 1.125rem;
+  border-radius: 12px;
+  border: 1.5px solid #E2E8F0;
+  background-color: #FFFFFF;
+  min-height: 52px;
+  box-sizing: border-box;
+  transition: all 0.2s ease-in-out;
+}
+
+.assessment-choice-card:hover .assessment-card-body {
+  border-color: #99E2E8;
+  background-color: #F8FDFF;
+  transform: translateY(-1px);
+}
+
+.assessment-card-text {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-body);
+  line-height: 1.4;
+  transition: color 0.15s ease;
+}
+
+/* Indicador de Seleção Circular com Check/Dot Turquesa */
+.assessment-indicator {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #CBD5E1;
+  background-color: #FFFFFF;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.assessment-choice-card.selected .assessment-card-body,
+.assessment-radio-input:checked + .assessment-card-body {
+  border-color: var(--color-turquoise);
+  background-color: #F0FDFA;
+  box-shadow: 0 3px 12px rgba(14, 154, 167, 0.14);
+}
+
+.assessment-choice-card.selected .assessment-card-text,
+.assessment-radio-input:checked + .assessment-card-body .assessment-card-text {
+  color: var(--color-blue-deep);
+  font-weight: 700;
+}
+
+.assessment-choice-card.selected .assessment-indicator,
+.assessment-radio-input:checked + .assessment-card-body .assessment-indicator {
+  border-color: var(--color-turquoise);
+  background-color: var(--color-turquoise);
+}
+
+.assessment-choice-card.selected .assessment-indicator::after,
+.assessment-radio-input:checked + .assessment-card-body .assessment-indicator::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+}
+
+/* Controle de Dor / Desconforto (Pergunta 3) */
+.assessment-pain-container {
+  background: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 1.25rem 1.125rem;
+}
+
+.assessment-pain-score-display {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.875rem 1rem;
+  background: #F0F9FA;
+  border-radius: 10px;
+  border: 1px solid rgba(14, 154, 167, 0.18);
+  margin-bottom: 1.25rem;
+}
+
+.pain-score-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-turquoise);
+  color: #FFFFFF;
+  font-size: 1.25rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 3px 8px rgba(14, 154, 167, 0.3);
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.pain-score-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pain-score-badge {
+  font-size: 0.9375rem;
+  font-weight: 700;
   color: var(--color-blue-deep);
 }
 
+.pain-score-help {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+/* Slider Customizado */
+.assessment-slider-wrapper {
+  position: relative;
+  padding: 0.5rem 0.25rem;
+}
+
+.assessment-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #0E9AA7 0%, #0E9AA7 50%, #E2E8F0 50%, #E2E8F0 100%);
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+}
+
+.assessment-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-turquoise);
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 2px 8px rgba(18, 61, 99, 0.35);
+  cursor: grab;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.assessment-range::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.15);
+  box-shadow: 0 4px 12px rgba(14, 154, 167, 0.45);
+}
+
+.assessment-range::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-turquoise);
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 2px 8px rgba(18, 61, 99, 0.35);
+  cursor: grab;
+}
+
+/* Três Marcos de Referência Visíveis */
+.assessment-pain-anchors {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.5rem;
+  padding: 0 0.25rem;
+}
+
+.anchor-item strong {
+  color: var(--color-blue-deep);
+}
+
+/* Marcadores Numéricos de Toque Rápido (0 a 10) */
+.assessment-pain-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.375rem;
+  margin-top: 1rem;
+}
+
+.pain-num-btn {
+  flex: 1 0 calc(9% - 0.375rem);
+  min-width: 28px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  color: var(--color-text-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.pain-num-btn:hover {
+  background: #EEF8F9;
+  border-color: var(--color-turquoise);
+  color: var(--color-turquoise);
+}
+
+.pain-num-btn.active {
+  background: var(--color-turquoise);
+  border-color: var(--color-turquoise);
+  color: #FFFFFF;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(14, 154, 167, 0.3);
+}
+
+/* Bloco Discreto "Seu próximo passo" */
+.assessment-next-step-card {
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 12px;
+  padding: 1rem 1.125rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.next-step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-turquoise);
+  margin-bottom: 0.375rem;
+}
+
+.next-step-text {
+  font-size: 0.875rem;
+  color: var(--color-text-body);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Bloco de Contato */
+.assessment-contact-block {
+  background-color: #FFFFFF;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 1.25rem 1.125rem;
+  margin-bottom: 1.5rem;
+}
+
+.assessment-contact-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-blue-deep);
+  margin: 0 0 0.25rem 0;
+}
+
+.assessment-contact-subtitle {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin: 0 0 1.125rem 0;
+}
+
+.assessment-field-group {
+  margin-bottom: 1rem;
+}
+
+.assessment-field-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-blue-deep);
+  margin-bottom: 0.375rem;
+}
+
+.required-star {
+  color: #DC2626;
+}
+
+.assessment-text-input {
+  width: 100%;
+  padding: 0.8125rem 1rem;
+  border-radius: 10px;
+  border: 1.5px solid #CBD5E1;
+  background-color: #FFFFFF;
+  color: var(--color-blue-dark);
+  font-size: 1rem; /* 16px para evitar auto-zoom indesejado no iOS */
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.assessment-text-input:focus {
+  border-color: var(--color-turquoise);
+  box-shadow: 0 0 0 3px rgba(14, 154, 167, 0.16);
+}
+
+.field-error-msg {
+  display: none;
+  font-size: 0.75rem;
+  color: #DC2626;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.field-error-msg.visible {
+  display: block;
+}
+
+/* Consentimento */
+.assessment-consent-group {
+  margin-top: 0.75rem;
+}
+
+.assessment-consent-checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-body);
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.assessment-consent-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--color-turquoise);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* Botão de Envio WhatsApp */
+.assessment-submit-wrapper {
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.assessment-btn-whatsapp {
+  width: 100%;
+  min-height: 52px;
+  background-color: #25D366;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
+  transition: all 0.2s ease;
+}
+
+.assessment-btn-whatsapp:hover,
+.assessment-btn-whatsapp:focus-visible {
+  background-color: #20BA5A;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.45);
+  outline: none;
+}
+
+.assessment-btn-whatsapp:active {
+  transform: translateY(0);
+}
+
+.assessment-submit-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  margin-top: 0.625rem;
+  line-height: 1.4;
+}
+
+/* Compatibilidade com formulários genéricos */
 .modal-title {
   font-size: 1.5rem;
   color: var(--color-blue-deep);
@@ -2033,6 +2605,96 @@ ul, ol {
 .form-input:focus, .form-select:focus, .form-textarea:focus {
   border-color: var(--color-turquoise);
   box-shadow: 0 0 0 3px rgba(67, 174, 187, 0.18);
+}
+
+/* Responsividade Mobile do Modal */
+@media (max-width: 639px) {
+  .assessment-modal-backdrop,
+  .modal-backdrop {
+    padding: 0.75rem;
+  }
+
+  .assessment-modal-card,
+  .modal-card {
+    max-height: calc(100dvh - 1.5rem);
+    border-radius: 18px;
+  }
+
+  .assessment-modal-header {
+    padding: 1rem 1.125rem 0.875rem 1.125rem;
+    padding-right: 3.25rem;
+  }
+
+  .assessment-modal-title {
+    font-size: 1.25rem;
+  }
+
+  .assessment-close-btn,
+  .modal-close-btn {
+    top: 0.875rem;
+    right: 1rem;
+    width: 36px;
+    height: 36px;
+  }
+
+  .assessment-modal-body {
+    padding: 1.125rem 1rem;
+  }
+
+  .assessment-card-body {
+    padding: 0.75rem 1rem;
+    min-height: 48px;
+  }
+
+  .assessment-card-text {
+    font-size: 0.875rem;
+  }
+
+  .pain-num-btn {
+    flex: 1 0 calc(18% - 0.375rem);
+    height: 32px;
+  }
+}
+
+/* Telas muito pequenas (320px a 360px) */
+@media (max-width: 360px) {
+  .assessment-modal-backdrop,
+  .modal-backdrop {
+    padding: 0.5rem;
+  }
+
+  .assessment-modal-card,
+  .modal-card {
+    border-radius: 14px;
+    max-height: calc(100dvh - 1rem);
+  }
+
+  .assessment-modal-header {
+    padding: 0.875rem 0.875rem 0.75rem 0.875rem;
+    padding-right: 3rem;
+  }
+
+  .assessment-modal-title {
+    font-size: 1.125rem;
+  }
+
+  .assessment-modal-body {
+    padding: 0.875rem 0.75rem;
+  }
+
+  .assessment-card-body {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .assessment-card-text {
+    font-size: 0.8125rem;
+  }
+
+  .pain-score-circle {
+    width: 38px;
+    height: 38px;
+    font-size: 1.125rem;
+  }
 }
 
 .toast-notification {

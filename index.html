@@ -87,8 +87,8 @@
         </svg>
         <span>Agende sua avaliação e comece sua jornada para o movimento sem dor · Copacabana, RJ</span>
       </div>
-      <a href="#bookingModal" class="top-announcement-btn open-booking-modal">
-        <span>Quero minha avaliação</span>
+      <a href="https://wa.me/5521997172737?text=Ol%C3%A1%2C%20L%C3%ADgia%21%20Gostaria%20de%20agendar%20uma%20avalia%C3%A7%C3%A3o%20no%20Espa%C3%A7o%20Ligia%20de%20Mayor." target="_blank" rel="noopener noreferrer" class="top-announcement-btn">
+        <span>Agendar Consulta</span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
           <line x1="5" y1="12" x2="19" y2="12"></line>
           <polyline points="12 5 19 12 12 19"></polyline>
@@ -124,7 +124,7 @@
 
       <!-- Ações do Cabeçalho à Direita -->
       <div class="header-actions">
-        <a href="#bookingModal" class="btn btn-blue-deep btn-sm open-booking-modal">
+        <button type="button" class="btn btn-blue-deep btn-sm open-assessment-modal" aria-label="Abrir questionário Quero minha avaliação">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
             <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -132,7 +132,7 @@
             <line x1="3" y1="10" x2="21" y2="10"></line>
           </svg>
           <span>Quero minha avaliação</span>
-        </a>
+        </button>
 
         <!-- Botão Hambúrguer Mobile -->
         <button class="nav-toggle-btn" id="mobileMenuToggle" aria-label="Abrir menu de navegação" aria-expanded="false">
@@ -232,15 +232,16 @@
           </p>
 
           <div class="hero-actions-row">
-            <a href="#bookingModal" class="btn btn-turquoise btn-lg open-booking-modal">
+            <button type="button" class="btn btn-turquoise btn-lg open-assessment-modal" id="heroCtaEvaluation" aria-label="Quero minha avaliação">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                 <line x1="16" y1="2" x2="16" y2="6"></line>
                 <line x1="8" y1="2" x2="8" y2="6"></line>
                 <line x1="3" y1="10" x2="21" y2="10"></line>
+                <polyline points="9 11 12 14 17 8"></polyline>
               </svg>
               <span>Quero minha avaliação</span>
-            </a>
+            </button>
 
             <a href="#servicos" class="btn btn-white btn-lg">
               <span>Conhecer os serviços</span>
@@ -398,7 +399,7 @@
               Diagnóstico biomecânico preciso e tratamento focado na causa raiz: lombalgias, hérnias discais, cervicalgias, ombros e reabilitação funcional pós-lesão ou cirurgia.
             </p>
           </div>
-          <a href="#" class="trio-card-link open-booking-modal" data-service="Fisioterapia Clínica">
+          <a href="#" class="trio-card-link open-assessment-modal" data-region="Coluna lombar / nervo ciático">
             <span>Saiba mais sobre Fisioterapia</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -421,7 +422,7 @@
               Aulas dinâmicas e criativas em equipamentos autênticos (Reformer, Cadillac e Columpio). Supervisão fisioterapêutica contínua para fortalecimento do core, ganho de flexibilidade e postura sem impacto nas articulações.
             </p>
           </div>
-          <a href="#" class="trio-card-link open-booking-modal" data-service="Pilates com Olhar Clínico">
+          <a href="#" class="trio-card-link open-assessment-modal" data-region="Postura e alinhamento">
             <span>Agendar aula experimental</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -444,7 +445,7 @@
               Método de Cadeias Musculares G.D.S., Acupuntura, Dry Needling (agulhamento a seco), Liberação Miofascial e Medicina Tradicional Chinesa para desinflamar e restaurar o equilíbrio do organismo.
             </p>
           </div>
-          <a href="#" class="trio-card-link open-booking-modal" data-service="Terapias Integrativas e MTC">
+          <a href="#" class="trio-card-link open-assessment-modal" data-region="Bem-estar, mobilidade e prevenção">
             <span>Conhecer as terapias</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -490,7 +491,7 @@
               <span class="service-tag-badge">Coluna &amp; Articulações</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-booking-modal" data-service="Fisioterapia Clínica">
+          <a href="#" class="service-card-action open-assessment-modal" data-region="Coluna lombar / nervo ciático">
             <span>Agendar Consulta</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -517,7 +518,7 @@
               <span class="service-tag-badge">Fortalecimento Seguro</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-booking-modal" data-service="Pilates com Olhar Clínico">
+          <a href="#" class="service-card-action open-assessment-modal" data-region="Postura e alinhamento">
             <span>Experimentar Aula</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -546,7 +547,7 @@
               <span class="service-tag-badge">Postura Global</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-booking-modal" data-service="Método de Cadeias G.D.S.">
+          <a href="#" class="service-card-action open-assessment-modal" data-region="Postura e alinhamento">
             <span>Saber Mais</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -575,7 +576,7 @@
               <span class="service-tag-badge">Movimento Criativo</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-booking-modal" data-service="Treinamento Suspenso / Columpio">
+          <a href="#" class="service-card-action open-assessment-modal" data-region="Bem-estar, mobilidade e prevenção">
             <span>Conhecer o Columpio</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -602,7 +603,7 @@
               <span class="service-tag-badge">Dry Needling</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-booking-modal" data-service="Terapias Integrativas e MTC">
+          <a href="#" class="service-card-action open-assessment-modal" data-region="Bem-estar, mobilidade e prevenção">
             <span>Conhecer Terapias</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -629,7 +630,7 @@
               <span class="service-tag-badge">Alívio de Rigidez</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-booking-modal" data-service="Liberação Miofascial">
+          <a href="#" class="service-card-action open-assessment-modal" data-region="Cervical, pescoço e ombros">
             <span>Agendar Sessão</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1029,8 +1030,8 @@
             </svg>
             <span>Agendar pelo WhatsApp (21) 99717-2737</span>
           </a>
-          <button class="btn btn-white btn-lg open-booking-modal">
-            <span>Preencher Formulário de Consulta</span>
+          <button type="button" class="btn btn-white btn-lg open-assessment-modal">
+            <span>Quero minha avaliação</span>
           </button>
         </div>
       </div>
@@ -1270,25 +1271,368 @@
   </a>
 
   <!-- ========================================================================
-       MODAL DE AGENDAMENTO RÁPIDO INTERATIVO (ADAPTADO PARA MOBILE)
+       MODAL DE AVALIAÇÃO INDIVIDUAL (QUESTIONÁRIO COMPLETO COM ROLAGEM ÚNICA)
+       Inspirado na referência com cartões de seleção elegantes, escala de 0 a 10
+       e envio formatado direto para o WhatsApp oficial 5521997172737
        ======================================================================== -->
-<div class="modal-backdrop assessment-backdrop" id="bookingModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
-<div class="modal-card assessment-card" tabindex="-1">
-<header class="assessment-header"><div><p>AVALIAÇÃO &amp; AGENDAMENTO</p><h2 id="modalTitle">Quero minha avaliação</h2><span>Espaço Ligia de Mayor</span></div><button type="button" class="modal-close-btn" id="closeBookingModal" aria-label="Fechar avaliação">×</button></header>
-<form id="quickBookingForm" class="assessment-body">
-<p class="assessment-intro">Conte o que você deseja melhorar. Suas respostas ajudam a equipe a preparar seu atendimento individualizado.</p>
-<fieldset class="assessment-group"><legend>1. Onde você sente desconforto ou deseja melhorar?</legend><label class="assessment-option"><input type="radio" name="region" value="Coluna lombar / nervo ciático" required><span><strong>Coluna lombar / nervo ciático</strong><small>Desconforto na lombar ou nas pernas</small></span></label><label class="assessment-option"><input type="radio" name="region" value="Cervical, pescoço e ombros" required><span><strong>Cervical, pescoço e ombros</strong><small>Tensão ou rigidez</small></span></label><label class="assessment-option"><input type="radio" name="region" value="Joelhos, tornozelos e quadril" required><span><strong>Joelhos, tornozelos e quadril</strong><small>Desconforto ao caminhar ou se movimentar</small></span></label><label class="assessment-option"><input type="radio" name="region" value="Postura e alinhamento" required><span><strong>Postura e alinhamento</strong><small>Melhorar a consciência corporal</small></span></label><label class="assessment-option"><input type="radio" name="region" value="Recuperação após cirurgia ou lesão" required><span><strong>Recuperação após cirurgia ou lesão</strong><small>Retomar movimentos com acompanhamento</small></span></label><label class="assessment-option"><input type="radio" name="region" value="Bem-estar, mobilidade e prevenção" required><span><strong>Bem-estar, mobilidade e prevenção</strong><small>Cuidar do corpo mesmo sem dor</small></span></label></fieldset>
-<fieldset class="assessment-group"><legend>2. Há quanto tempo sente esse desconforto?</legend><label class="assessment-option"><input type="radio" name="duration" value="Menos de 1 mês" required><span><strong>Menos de 1 mês</strong></span></label><label class="assessment-option"><input type="radio" name="duration" value="Entre 1 e 6 meses" required><span><strong>Entre 1 e 6 meses</strong></span></label><label class="assessment-option"><input type="radio" name="duration" value="Mais de 6 meses" required><span><strong>Mais de 6 meses</strong></span></label><label class="assessment-option"><input type="radio" name="duration" value="Não sinto dor (prevenção)" required><span><strong>Não sinto dor (prevenção)</strong></span></label></fieldset>
-<fieldset class="assessment-group assessment-range"><legend>3. Nível de desconforto</legend><label for="painLevel">Intensidade de 0 a 10: <output id="painValue" for="painLevel">0/10</output></label><input id="painLevel" name="pain" type="range" min="0" max="10" value="0"><div><span>0 · Sem dor</span><span>5 · Moderado</span><span>10 · Intenso</span></div></fieldset>
-<fieldset class="assessment-group"><legend>4. Qual é seu principal objetivo?</legend><label class="assessment-option"><input type="radio" name="goal" value="Aliviar a dor e melhorar meus movimentos" required><span><strong>Aliviar a dor e melhorar meus movimentos</strong></span></label><label class="assessment-option"><input type="radio" name="goal" value="Voltar a treinar ou praticar meu esporte" required><span><strong>Voltar a treinar ou praticar meu esporte</strong></span></label><label class="assessment-option"><input type="radio" name="goal" value="Melhorar a postura e a mobilidade" required><span><strong>Melhorar a postura e a mobilidade</strong></span></label><label class="assessment-option"><input type="radio" name="goal" value="Ganhar disposição, equilíbrio e autonomia" required><span><strong>Ganhar disposição, equilíbrio e autonomia</strong></span></label><label class="assessment-option"><input type="radio" name="goal" value="Relaxar e cuidar do meu bem-estar" required><span><strong>Relaxar e cuidar do meu bem-estar</strong></span></label></fieldset>
-<aside class="assessment-intro"><strong>Seu próximo passo</strong><p>A avaliação individual permite à equipe orientar o cuidado adequado, entre Fisioterapia, Pilates e Terapias Integrativas, conforme suas necessidades.</p></aside>
-<div class="form-group"><label class="form-label" for="clientName">Seu nome completo *</label><input id="clientName" name="name" class="form-input" autocomplete="name" maxlength="120" required placeholder="Como podemos chamar você?"></div>
-<div class="form-group"><label class="form-label" for="clientPhone">WhatsApp / telefone *</label><input id="clientPhone" name="phone" class="form-input" type="tel" inputmode="tel" autocomplete="tel" maxlength="22" required placeholder="(21) 99999-9999"></div>
-<div class="form-group"><label class="form-label" for="modalServiceSelect">Modalidade de interesse</label><select id="modalServiceSelect" class="form-select"><option value="">Quero orientação na avaliação</option><option>Pilates com Olhar Clínico</option><option>Fisioterapia Clínica</option><option>Método de Cadeias G.D.S.</option><option>Treinamento Suspenso / Columpio</option><option>Terapias Integrativas e MTC</option><option>Liberação Miofascial</option></select></div>
-<p class="assessment-privacy">Ao continuar, você abre o WhatsApp oficial com suas respostas preenchidas. Revise a mensagem e toque em enviar para compartilhá-las com a equipe. Este formulário não salva seus dados no site.</p>
-<label class="assessment-consent"><input type="checkbox" required> <span>Concordo em compartilhar estas informações com a equipe pelo WhatsApp para solicitar minha avaliação.</span></label>
-<button type="submit" class="btn btn-turquoise assessment-submit">Enviar pelo WhatsApp</button>
-</form></div></div>
+  <div class="assessment-modal-backdrop" id="assessmentModal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="assessmentModalTitle">
+    <div class="assessment-modal-card">
+      
+      <!-- Cabeçalho Sticky com Destaque e Botão Fechar Sempre Acessível -->
+      <div class="assessment-modal-header">
+        <div class="assessment-header-content">
+          <span class="assessment-header-badge">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            AVALIAÇÃO &amp; AGENDAMENTO
+          </span>
+          <h2 class="assessment-modal-title" id="assessmentModalTitle">Quero minha avaliação</h2>
+          <p class="assessment-modal-clinic">Espaço Ligia de Mayor · Copacabana, RJ</p>
+        </div>
+        <button type="button" class="assessment-close-btn" id="closeAssessmentModal" aria-label="Fechar questionário de avaliação">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Única Área Interna de Rolagem Suave -->
+      <div class="assessment-modal-body">
+        
+        <!-- Mensagem Introdutória Confortável e Acolhedora -->
+        <div class="assessment-intro-box">
+          <div class="assessment-intro-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <p class="assessment-intro-text">
+            Responda estas perguntas para a equipe do Espaço Ligia de Mayor conhecer suas necessidades e orientar o agendamento da sua avaliação.
+          </p>
+        </div>
+
+        <form id="assessmentForm" novalidate>
+          
+          <!-- PERGUNTA 1 -->
+          <div class="assessment-section" id="sectionQ1">
+            <div class="assessment-q-head">
+              <span class="assessment-q-number">1</span>
+              <div class="assessment-q-meta">
+                <h3 class="assessment-q-title">Onde você sente desconforto ou deseja melhorar?</h3>
+                <span class="assessment-q-subtitle">Selecione a opção principal:</span>
+              </div>
+            </div>
+            
+            <div class="assessment-cards-list" role="radiogroup" aria-label="Região ou necessidade de desconforto">
+              <!-- Opção 1 -->
+              <label class="assessment-choice-card selected">
+                <input type="radio" name="region" value="Coluna lombar / nervo ciático" class="assessment-radio-input" required checked />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Coluna lombar / nervo ciático</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 2 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="region" value="Cervical, pescoço e ombros" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Cervical, pescoço e ombros</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 3 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="region" value="Joelhos, tornozelos e quadril" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Joelhos, tornozelos e quadril</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 4 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="region" value="Postura e alinhamento" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Postura e alinhamento</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 5 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="region" value="Recuperação após cirurgia ou lesão" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Recuperação após cirurgia ou lesão</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 6 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="region" value="Bem-estar, mobilidade e prevenção" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Bem-estar, mobilidade e prevenção</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- PERGUNTA 2 -->
+          <div class="assessment-section" id="sectionQ2">
+            <div class="assessment-q-head">
+              <span class="assessment-q-number">2</span>
+              <div class="assessment-q-meta">
+                <h3 class="assessment-q-title">Há quanto tempo sente esse desconforto?</h3>
+                <span class="assessment-q-subtitle">Selecione o tempo aproximado:</span>
+              </div>
+            </div>
+
+            <div class="assessment-cards-list" role="radiogroup" aria-label="Tempo de desconforto">
+              <!-- Opção 1 -->
+              <label class="assessment-choice-card selected">
+                <input type="radio" name="duration" value="Menos de 1 mês" class="assessment-radio-input" required checked />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Menos de 1 mês</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 2 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="duration" value="Entre 1 e 6 meses" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Entre 1 e 6 meses</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 3 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="duration" value="Mais de 6 meses" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Mais de 6 meses</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 4 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="duration" value="Não sinto dor, quero prevenção" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Não sinto dor, quero prevenção</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- PERGUNTA 3 -->
+          <div class="assessment-section" id="sectionQ3">
+            <div class="assessment-q-head">
+              <span class="assessment-q-number">3</span>
+              <div class="assessment-q-meta">
+                <h3 class="assessment-q-title">Qual é o nível do seu desconforto?</h3>
+                <span class="assessment-q-subtitle">Deslize a barra ou toque no número de 0 a 10:</span>
+              </div>
+            </div>
+
+            <div class="assessment-pain-container">
+              <!-- Destaque Visual do Valor Atualizado -->
+              <div class="assessment-pain-score-display">
+                <div class="pain-score-circle" id="painScoreCircle">5</div>
+                <div class="pain-score-info">
+                  <span class="pain-score-badge" id="painScoreText">Nível 5 · Moderado</span>
+                  <span class="pain-score-help" id="painScoreHelp">Desconforto que incomoda em tarefas cotidianas</span>
+                </div>
+              </div>
+
+              <!-- Slider Range Estilizado -->
+              <div class="assessment-slider-wrapper">
+                <input 
+                  type="range" 
+                  id="painRangeInput" 
+                  name="painLevel" 
+                  min="0" 
+                  max="10" 
+                  value="5" 
+                  step="1" 
+                  class="assessment-range" 
+                  aria-label="Escala de desconforto de 0 a 10" 
+                />
+              </div>
+
+              <!-- Três Marcos de Referência Visíveis -->
+              <div class="assessment-pain-anchors">
+                <span class="anchor-item anchor-left"><strong>0:</strong> sem dor</span>
+                <span class="anchor-item anchor-center"><strong>5:</strong> moderado</span>
+                <span class="anchor-item anchor-right"><strong>10:</strong> muito intenso</span>
+              </div>
+
+              <!-- Marcadores Rápidos Clicáveis (0 a 10) -->
+              <div class="assessment-pain-buttons" role="group" aria-label="Seletor de nível de 0 a 10">
+                <button type="button" class="pain-num-btn" data-value="0">0</button>
+                <button type="button" class="pain-num-btn" data-value="1">1</button>
+                <button type="button" class="pain-num-btn" data-value="2">2</button>
+                <button type="button" class="pain-num-btn" data-value="3">3</button>
+                <button type="button" class="pain-num-btn" data-value="4">4</button>
+                <button type="button" class="pain-num-btn active" data-value="5">5</button>
+                <button type="button" class="pain-num-btn" data-value="6">6</button>
+                <button type="button" class="pain-num-btn" data-value="7">7</button>
+                <button type="button" class="pain-num-btn" data-value="8">8</button>
+                <button type="button" class="pain-num-btn" data-value="9">9</button>
+                <button type="button" class="pain-num-btn" data-value="10">10</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PERGUNTA 4 -->
+          <div class="assessment-section" id="sectionQ4">
+            <div class="assessment-q-head">
+              <span class="assessment-q-number">4</span>
+              <div class="assessment-q-meta">
+                <h3 class="assessment-q-title">Qual é seu principal objetivo?</h3>
+                <span class="assessment-q-subtitle">Selecione o que você mais busca alcançar:</span>
+              </div>
+            </div>
+
+            <div class="assessment-cards-list" role="radiogroup" aria-label="Principal objetivo">
+              <!-- Opção 1 -->
+              <label class="assessment-choice-card selected">
+                <input type="radio" name="goal" value="Aliviar a dor e me movimentar melhor" class="assessment-radio-input" required checked />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Aliviar a dor e me movimentar melhor</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 2 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="goal" value="Voltar a treinar ou praticar meu esporte" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Voltar a treinar ou praticar meu esporte</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 3 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="goal" value="Melhorar minha postura e mobilidade" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Melhorar minha postura e mobilidade</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 4 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="goal" value="Ganhar disposição, equilíbrio e autonomia" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Ganhar disposição, equilíbrio e autonomia</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+
+              <!-- Opção 5 -->
+              <label class="assessment-choice-card">
+                <input type="radio" name="goal" value="Relaxar e cuidar do meu bem-estar" class="assessment-radio-input" />
+                <span class="assessment-card-body">
+                  <span class="assessment-card-text">Relaxar e cuidar do meu bem-estar</span>
+                  <span class="assessment-indicator" aria-hidden="true"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- BLOCO DISCRETO: SEU PRÓXIMO PASSO -->
+          <div class="assessment-next-step-card">
+            <div class="next-step-badge">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>Seu próximo passo</span>
+            </div>
+            <p class="next-step-text">
+              A avaliação individual permite à equipe conhecer suas necessidades e orientar o cuidado adequado.
+            </p>
+          </div>
+
+          <!-- DADOS DE CONTATO -->
+          <div class="assessment-section assessment-contact-block" id="sectionContact">
+            <h4 class="assessment-contact-title">Dados para agendamento</h4>
+            <p class="assessment-contact-subtitle">Preencha seus dados para a equipe identificar seu contato:</p>
+
+            <div class="assessment-field-group">
+              <label for="assessmentUserName" class="assessment-field-label">
+                Nome completo <span class="required-star">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="assessmentUserName" 
+                name="userName" 
+                class="assessment-text-input" 
+                placeholder="Ex: Mariana Silva" 
+                required 
+                autocomplete="name"
+              />
+              <span class="field-error-msg" id="nameError">Por favor, informe seu nome completo.</span>
+            </div>
+
+            <div class="assessment-field-group">
+              <label for="assessmentUserPhone" class="assessment-field-label">
+                WhatsApp com DDD <span class="required-star">*</span>
+              </label>
+              <input 
+                type="tel" 
+                id="assessmentUserPhone" 
+                name="userPhone" 
+                class="assessment-text-input" 
+                placeholder="(21) 99999-9999" 
+                required 
+                autocomplete="tel"
+                maxlength="15"
+              />
+              <span class="field-error-msg" id="phoneError">Por favor, informe seu WhatsApp com DDD (mínimo 10 dígitos).</span>
+            </div>
+
+            <!-- Confirmação simples de concordância -->
+            <div class="assessment-consent-group">
+              <label class="assessment-consent-checkbox-label">
+                <input type="checkbox" id="assessmentUserConsent" checked required />
+                <span class="consent-text">
+                  Concordo em compartilhar minhas respostas com a equipe do Espaço Ligia de Mayor pelo WhatsApp para agendamento da minha avaliação.
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- BOTÃO FINAL: ENVIAR PELO WHATSAPP -->
+          <div class="assessment-submit-wrapper">
+            <button type="submit" class="assessment-btn-whatsapp" id="btnSubmitAssessment">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+              </svg>
+              <span>Enviar pelo WhatsApp</span>
+            </button>
+            <p class="assessment-submit-hint">
+              Você poderá revisar toda a mensagem e tocar em enviar diretamente no seu aplicativo do WhatsApp.
+            </p>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
 
   <!-- Scripts Vanilla JavaScript -->
   <script src="./js/hero-config.js"></script>
