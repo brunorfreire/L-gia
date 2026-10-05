@@ -684,9 +684,9 @@ ul, ol {
 
 /* --------------------------------------------------------------------------
    PAINEL BRANCO SOBREPOSTO (.hero-white-card)
-   - Transparência elegante (rgba 0.86 em desktop e mobile)
+   - Transparência elegante (rgba 0.78 em desktop e mobile)
    - Desfoque backdrop-filter: blur(10px) para suavizar o vídeo ao fundo
-   - Textos, ícones e botões 100% opacos com alto contraste (WCAG AAA)
+   - Textos, ícones e botões 100% opacos com cores escuras para favorecer a legibilidade
    - Bordas brancas suaves, cantos arredondados e sombra premium
    - Totalmente responsivo para 320px, 360px, 390px, 430px e desktop
    -------------------------------------------------------------------------- */
@@ -707,7 +707,7 @@ ul, ol {
 
 .hero-white-card {
   /* Fundo semitransparente elegante com visualização sutil do ambiente do vídeo */
-  background: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.78);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: var(--radius-2xl);
@@ -867,7 +867,7 @@ ul, ol {
 
   /* Painel semitransparente com a mesma elegância de 86% de opacidade aprovada no desktop */
   .hero-white-card {
-    background: rgba(255, 255, 255, 0.86);
+    background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-radius: var(--radius-xl);
