@@ -37,16 +37,15 @@ function initHeaderScroll() {
 /**
  * 2. Controle Acessível e Otimizado do Fundo do Hero (Vídeo ou Imagem Estática Oficial)
  * - Integração centralizada com window.HERO_VIDEO_CONFIG (URL da Hostinger)
- * - Enquanto nenhuma URL for configurada, exibe exclusivamente a imagem estática oficial
- *   sem solicitar arquivos demonstrativos inexistentes ou gerar erros 404
- * - Assim que a URL for preenchida, ativa reprodução silenciosa (muted, playsInline, loop)
- * - Exibe o botão de controle de play/pause somente quando houver vídeo ativo
+ * - Autoplay silencioso (muted, playsInline, loop)
+ * - Botão "Pausar" permanentemente oculto conforme solicitado pelo usuário
  * - Respeita acessibilidade de movimento reduzido (prefers-reduced-motion) e economia de dados
  * - Pausa automática fora da viewport (IntersectionObserver) ou aba em segundo plano
+ * - Diagnóstico transparente com fallback para a fotografia real do estúdio em caso de falha de rede/404
  */
 function initHeroVideo() {
   const config = window.HERO_VIDEO_CONFIG || {
-    videoUrl: '',
+    videoUrl: 'https://fisioligia.siteoficialpro.com/assets/hero-studio-ligia.mp4',
     posterUrl: './assets/hero-studio-poster.jpg'
   };
 
@@ -56,114 +55,82 @@ function initHeroVideo() {
   const staticWrapper = document.getElementById('heroImageWrapper');
   const heroSection = document.getElementById('inicio');
 
-  // 1. Caso nenhuma URL de vídeo tenha sido informada:
-  // Mantém 100% o fundo com a imagem estática de alta qualidade, sem tentar carregar vídeos fictícios
-  const targetVideoUrl = (config.videoUrl || '').trim();
-  if (!targetVideoUrl) {
-    if (videoWrapper) videoWrapper.style.display = 'none';
-    if (staticWrapper) staticWrapper.style.display = 'block';
-    if (controlBtn) controlBtn.style.display = 'none';
-    return;
+  // Garante que qualquer resquício do botão de controle fique 100% oculto
+  if (controlBtn) {
+    controlBtn.style.display = 'none';
   }
 
-  // 2. Respeito à acessibilidade de movimento reduzido e economia de dados móveis
+  const targetVideoUrl = (config.videoUrl || 'https://fisioligia.siteoficialpro.com/assets/hero-studio-ligia.mp4').trim();
+
+  // 1. Respeito à acessibilidade de movimento reduzido e economia de dados móveis
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isDataSaver = navigator.connection && navigator.connection.saveData === true;
 
   if (prefersReducedMotion || isDataSaver) {
     if (videoWrapper) videoWrapper.style.display = 'none';
     if (staticWrapper) staticWrapper.style.display = 'block';
-    if (controlBtn) controlBtn.style.display = 'none';
     return;
   }
 
   if (!video) return;
 
-  // 3. Aplicação da URL pública fornecida e propriedades para reprodução silenciosa garantida
+  // 2. Propriedades fundamentais para garantir autoplay silencioso contínuo
   video.muted = true;
   video.defaultMuted = true;
   video.playsInline = true;
   video.loop = true;
+  video.autoplay = true;
   video.preload = 'auto';
-  video.src = targetVideoUrl;
 
-  let userManuallyPaused = false;
+  // Aplicação da URL pública absoluta do vídeo na Hostinger
+  if (!video.src || video.src !== targetVideoUrl) {
+    video.src = targetVideoUrl;
+  }
+
   let isSectionInView = true;
 
-  // 4. Exibição suave do contêiner do vídeo e ativação do botão apenas quando o vídeo puder reproduzir
+  // 3. Exibição suave do vídeo assim que estiver pronto para reproduzir
   const handleReadyToPlay = () => {
     if (videoWrapper) videoWrapper.style.display = 'block';
     video.classList.add('is-ready');
-    if (controlBtn) controlBtn.style.display = 'inline-flex';
-    updateControlState(false);
   };
 
-  if (video.readyState >= 3) {
+  if (video.readyState >= 2) {
     handleReadyToPlay();
   } else {
     video.addEventListener('canplay', handleReadyToPlay, { once: true });
     video.addEventListener('playing', handleReadyToPlay, { once: true });
+    video.addEventListener('loadeddata', handleReadyToPlay, { once: true });
   }
 
-  // 5. Fallback automático em caso de falha de carregamento da URL (ex: erro 404 na hospedagem)
+  // 4. Tratamento de erro detalhado com diagnóstico preciso
   video.addEventListener('error', () => {
-    console.warn('Vídeo do Hero não pôde ser reproduzido pela URL informada. Exibindo imagem estática oficial.');
+    const error = video.error;
+    let errorDetail = 'Erro desconhecido';
+    if (error) {
+      switch (error.code) {
+        case 1: errorDetail = 'MEDIA_ERR_ABORTED - Carregamento abortado'; break;
+        case 2: errorDetail = 'MEDIA_ERR_NETWORK - Erro de conexão de rede'; break;
+        case 3: errorDetail = 'MEDIA_ERR_DECODE - Falha de decodificação'; break;
+        case 4: errorDetail = 'MEDIA_ERR_SRC_NOT_SUPPORTED - Arquivo não encontrado (HTTP 404) ou indisponível no servidor'; break;
+      }
+    }
+    console.warn(`[Hero Video] Falha ao carregar ${targetVideoUrl}: ${errorDetail}. Exibindo fotografia oficial do estúdio.`);
     if (videoWrapper) videoWrapper.style.display = 'none';
     if (staticWrapper) staticWrapper.style.display = 'block';
-    if (controlBtn) controlBtn.style.display = 'none';
   });
 
-  // 6. Tentativa de reprodução automática com captura de bloqueio do navegador
+  // 5. Início da reprodução automática com captura de política do navegador
   const playPromise = video.play();
   if (playPromise !== undefined) {
-    playPromise.catch(() => {
-      // Caso a política do navegador exija interação, mantém o botão acessível no estado "pausado"
-      if (videoWrapper) videoWrapper.style.display = 'block';
-      if (controlBtn) controlBtn.style.display = 'inline-flex';
-      updateControlState(true);
+    playPromise.then(() => {
+      handleReadyToPlay();
+    }).catch((err) => {
+      console.warn('[Hero Video] Autoplay aguardando interação do usuário:', err);
     });
   }
 
-  // 7. Atualização do botão de controle (Play/Pause)
-  function updateControlState(isPaused) {
-    if (!controlBtn) return;
-    const pauseIcon = controlBtn.querySelector('.icon-pause');
-    const playIcon = controlBtn.querySelector('.icon-play');
-    const labelText = controlBtn.querySelector('.control-text');
-
-    if (isPaused) {
-      controlBtn.setAttribute('aria-label', 'Reproduzir vídeo de fundo');
-      controlBtn.setAttribute('aria-pressed', 'true');
-      controlBtn.title = 'Reproduzir vídeo de fundo';
-      if (pauseIcon) pauseIcon.style.display = 'none';
-      if (playIcon) playIcon.style.display = 'inline-block';
-      if (labelText) labelText.textContent = 'Reproduzir';
-    } else {
-      controlBtn.setAttribute('aria-label', 'Pausar vídeo de fundo');
-      controlBtn.setAttribute('aria-pressed', 'false');
-      controlBtn.title = 'Pausar vídeo de fundo';
-      if (pauseIcon) pauseIcon.style.display = 'inline-block';
-      if (playIcon) playIcon.style.display = 'none';
-      if (labelText) labelText.textContent = 'Pausar';
-    }
-  }
-
-  // 8. Evento de clique para alternar play/pause manualmente
-  if (controlBtn) {
-    controlBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (video.paused) {
-        userManuallyPaused = false;
-        video.play().then(() => updateControlState(false)).catch(() => {});
-      } else {
-        userManuallyPaused = true;
-        video.pause();
-        updateControlState(true);
-      }
-    });
-  }
-
-  // 9. Pausar automaticamente quando o Hero sai da tela (economia de bateria e dados)
+  // 6. Pausar automaticamente quando o Hero sai da tela (economia de bateria e dados)
   if ('IntersectionObserver' in window && heroSection) {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -171,8 +138,8 @@ function initHeroVideo() {
         if (!entry.isIntersecting) {
           if (!video.paused) video.pause();
         } else {
-          if (!userManuallyPaused && !document.hidden && video.src) {
-            video.play().then(() => updateControlState(false)).catch(() => {});
+          if (!document.hidden && video.src && !prefersReducedMotion) {
+            video.play().catch(() => {});
           }
         }
       });
@@ -181,13 +148,13 @@ function initHeroVideo() {
     observer.observe(heroSection);
   }
 
-  // 10. Pausar quando o usuário troca de aba no navegador
+  // 7. Pausar quando o usuário troca ou minimiza a aba
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       if (!video.paused) video.pause();
     } else {
-      if (!userManuallyPaused && isSectionInView && video.src) {
-        video.play().then(() => updateControlState(false)).catch(() => {});
+      if (isSectionInView && video.src && !prefersReducedMotion) {
+        video.play().catch(() => {});
       }
     }
   });

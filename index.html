@@ -196,17 +196,22 @@
         />
       </div>
 
-      <!-- Contêiner do Vídeo Real (Ativado dinamicamente quando a URL da Hostinger for configurada) -->
-      <div class="hero-video-wrapper" id="heroVideoWrapper" aria-hidden="true" style="display: none;">
+      <!-- Contêiner do Vídeo Real (Configurado com a URL Absoluta da Hostinger) -->
+      <div class="hero-video-wrapper" id="heroVideoWrapper" aria-hidden="true">
         <video
           class="hero-video-media"
           id="heroBackgroundVideo"
           muted
           playsinline
           loop
-          preload="none"
+          autoplay
+          preload="auto"
+          poster="./assets/hero-studio-poster.jpg"
           tabindex="-1"
-        ></video>
+          src="https://fisioligia.siteoficialpro.com/assets/hero-studio-ligia.mp4"
+        >
+          <source src="https://fisioligia.siteoficialpro.com/assets/hero-studio-ligia.mp4" type="video/mp4" />
+        </video>
       </div>
 
       <!-- Painel Branco Sobreposto (Inspirado no Estilo da Referência) -->
@@ -268,25 +273,6 @@
 
         </div>
       </div>
-
-      <!-- Botão Acessível e Discreto de Controle de Vídeo (Play/Pause - ativado quando houver vídeo) -->
-      <button
-        type="button"
-        class="hero-video-control-btn"
-        id="heroVideoControlBtn"
-        aria-label="Pausar vídeo de fundo"
-        aria-pressed="false"
-        style="display: none;"
-      >
-        <svg class="control-icon icon-pause" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <rect x="6" y="4" width="4" height="16" rx="1"></rect>
-          <rect x="14" y="4" width="4" height="16" rx="1"></rect>
-        </svg>
-        <svg class="control-icon icon-play" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="display: none;">
-          <polygon points="5 3 19 12 5 21 5 3"></polygon>
-        </svg>
-        <span class="control-text">Pausar</span>
-      </button>
 
     </div>
   </section>
