@@ -1,0 +1,6 @@
+{
+  "name": "Espaço Ligia de Mayor - Fisioterapia & Pilates",
+  "description": "Clínica de Fisioterapia, Pilates Clínico, Método G.D.S. e Terapias Integrativas em Copacabana, Rio de Janeiro. Movimento, reabilitação e qualidade de vida.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
