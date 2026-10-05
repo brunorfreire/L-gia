@@ -2060,3 +2060,59 @@ ul, ol {
   transform: translateX(-50%) translateY(0);
   opacity: 1;
 }
+
+/* Avaliação inicial e ajustes para telas pequenas */
+[hidden] { display: none !important; }
+.assessment-backdrop { padding: 1rem; }
+.assessment-card { padding: 0; display: flex; flex-direction: column; width: 100%; max-width: 720px; max-height: calc(100dvh - 2rem); overflow: hidden; }
+.assessment-header { flex-shrink: 0; display: flex; align-items: flex-start; gap: 1rem; padding: 1.25rem; background: linear-gradient(110deg, #123D63, #3598A4); color: white; }
+.assessment-header > div { min-width: 0; flex: 1; }
+.assessment-header p { margin: 0 0 .4rem; font-size: .7rem; letter-spacing: .05em; }
+.assessment-header h2 { color: white; font-size: clamp(1.2rem, 4vw, 1.65rem); overflow-wrap: anywhere; }
+.assessment-header span { font-size: .85rem; }
+.assessment-header .modal-close-btn { position: static; flex: 0 0 44px; width: 44px; height: 44px; font-size: 1.8rem; background: rgba(255,255,255,.16); color: white; }
+.assessment-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.5rem; scroll-padding: 1rem; }
+.assessment-intro { padding: 1rem; border: 1px solid #b4e1e5; background: #effafb; border-radius: 16px; margin-bottom: 1.5rem; }
+.assessment-intro p { margin: .5rem 0 0; }
+.assessment-group { min-width: 0; border: 0; padding: 0; margin: 0 0 1.75rem; }
+.assessment-group legend { font-weight: 750; color: #123D63; margin-bottom: .8rem; width: 100%; }
+.assessment-option { display: flex; gap: .75rem; align-items: center; padding: 1rem; border: 1px solid #d9e3ea; border-radius: 16px; margin-bottom: .65rem; cursor: pointer; background: white; min-height: 52px; }
+.assessment-option input { flex: 0 0 auto; accent-color: #3598A4; width: 18px; height: 18px; }
+.assessment-option span { min-width: 0; }
+.assessment-option small { display: block; margin-top: .25rem; color: #526575; }
+.assessment-option:has(input:checked) { background: #effafb; border-color: #3598A4; box-shadow: 0 0 0 1px #3598A4; }
+.assessment-range input { width: 100%; margin: 1rem 0; accent-color: #3598A4; }
+.assessment-range > div { display: flex; justify-content: space-between; gap: .5rem; font-size: .75rem; }
+.assessment-range output { font-weight: 700; }
+.assessment-consent { display: flex; align-items: flex-start; gap: .65rem; margin: 1rem 0; font-size: .85rem; }
+.assessment-consent input { margin-top: .3rem; flex-shrink: 0; accent-color: #3598A4; }
+.assessment-privacy { font-size: .85rem; color: #526575; }
+.assessment-submit { width: 100%; white-space: normal; line-height: 1.4; margin-bottom: max(1rem, env(safe-area-inset-bottom)); }
+.assessment-body input:not([type=radio]):not([type=checkbox]):not([type=range]), .assessment-body select { font-size: 16px; }
+.assessment-card :focus-visible { outline: 3px solid #43AEBB; outline-offset: 3px; }
+@media (max-width: 767px) {
+  .container { padding-left: 16px; padding-right: 16px; }
+  .container * { min-width: 0; }
+  .container p, .container h1, .container h2, .container h3, .container a, .container span, .assessment-body { overflow-wrap: anywhere; }
+  .btn { max-width: 100%; white-space: normal; line-height: 1.35; }
+  .btn svg { flex-shrink: 0; }
+  .site-header { height: auto; min-height: 90px; }
+  .header-container { padding-top: .75rem; padding-bottom: .75rem; gap: .65rem; }
+  .brand-identity { flex: 1; }
+  .brand-primary-name { font-size: clamp(.9rem, 3.6vw, 1.15rem); }
+  .brand-secondary-specialty, .brand-tertiary-tag { font-size: .6rem; letter-spacing: .02em; }
+  .header-actions { gap: .5rem; flex-shrink: 0; }
+  .header-actions .btn { display: none; }
+  .nav-toggle-btn { flex: 0 0 44px; }
+  .top-announcement-content { gap: .5rem; }
+  .top-announcement-text { white-space: normal; font-size: .7rem; line-height: 1.3; flex: 1; }
+  .top-announcement-btn { flex-shrink: 0; max-width: 50%; white-space: normal; text-align: center; font-size: .6rem; min-height: 32px; }
+  .hero-actions-row { flex-direction: column; align-items: stretch; }
+  .hero-actions-row .btn { width: 100%; }
+  .map-card-bottom-bar { flex-wrap: wrap; gap: .75rem; }
+  .contact-row-item > div:last-child { min-width: 0; flex: 1; }
+  .assessment-backdrop { padding: 0; }
+  .assessment-card { max-width: none; width: 100%; height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; border-radius: 0; border: 0; }
+  .assessment-header { padding: max(1rem, env(safe-area-inset-top)) 1rem 1rem; }
+  .assessment-body { padding: 1.25rem 1rem max(2rem, env(safe-area-inset-bottom)); }
+}

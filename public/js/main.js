@@ -172,6 +172,8 @@ function initMobileMenu() {
   if (!toggleBtn || !panel || !overlay) return;
 
   function openMenu() {
+    const menuTop = document.querySelector('.site-header')?.getBoundingClientRect().bottom || 90;
+    [panel, overlay].forEach(el => { el.style.top = menuTop + 'px'; el.style.height = 'calc(100dvh - ' + menuTop + 'px)'; });
     toggleBtn.classList.add('active');
     panel.classList.add('open');
     overlay.classList.add('open');
@@ -354,67 +356,73 @@ function showToast(message) {
  * 6. Modal Interativo de Agendamento Personalizado
  */
 function initBookingModal() {
-  const modalBackdrop = document.getElementById('bookingModal');
-  const openButtons = document.querySelectorAll('.open-booking-modal');
-  const closeButton = document.getElementById('closeBookingModal');
+  const backdrop = document.getElementById('bookingModal');
+  const card = backdrop?.querySelector('.assessment-card');
+  const close = document.getElementById('closeBookingModal');
   const form = document.getElementById('quickBookingForm');
-
-  if (!modalBackdrop || !closeButton || !form) return;
-
-  function openModal(defaultService = '') {
-    if (defaultService) {
+  if (!backdrop || !card || !close || !form) return;
+  let opener, previousOverflow;
+  function hide() {
+    backdrop.classList.remove('active');
+    backdrop.hidden = true;
+    backdrop.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = previousOverflow || '';
+    opener?.focus();
+  }
+  document.querySelectorAll('.open-booking-modal').forEach(button => {
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      opener = button;
+      previousOverflow = document.body.style.overflow;
       const select = document.getElementById('modalServiceSelect');
-      if (select) select.value = defaultService;
-    }
-    modalBackdrop.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeModal() {
-    modalBackdrop.classList.remove('active');
-    document.body.style.overflow = '';
-  }
-
-  openButtons.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const service = btn.getAttribute('data-service') || '';
-      openModal(service);
+      select.value = button.dataset.service || '';
+      backdrop.hidden = false;
+      backdrop.setAttribute('aria-hidden', 'false');
+      backdrop.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      form.scrollTop = 0;
+      card.focus();
     });
   });
-
-  closeButton.addEventListener('click', closeModal);
-
-  modalBackdrop.addEventListener('click', (e) => {
-    if (e.target === modalBackdrop) {
-      closeModal();
+  close.addEventListener('click', hide);
+  backdrop.addEventListener('click', event => { if (event.target === backdrop) hide(); });
+  document.addEventListener('keydown', event => {
+    if (backdrop.hidden) return;
+    if (event.key === 'Escape') hide();
+    if (event.key === 'Tab') {
+      const items = Array.from(card.querySelectorAll('button, input, select, a[href], textarea')).filter(el => !el.disabled && el.getClientRects().length);
+      const first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === card)) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === card)) { event.preventDefault(); first?.focus(); }
     }
   });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modalBackdrop.classList.contains('active')) {
-      closeModal();
+  const pain = document.getElementById('painLevel');
+  pain.addEventListener('input', () => { document.getElementById('painValue').textContent = pain.value + '/10'; });
+  const phone = document.getElementById('clientPhone');
+  phone.addEventListener('input', () => phone.setCustomValidity(''));
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const digits = phone.value.replace(/\D/g, '');
+    if (digits.length < 10 || digits.length > 13) {
+      phone.setCustomValidity('Informe um telefone com DDD válido.');
+      phone.reportValidity();
+      return;
     }
-  });
-
-  // Envio do formulário direto para o WhatsApp formatado
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const name = document.getElementById('clientName').value.trim();
-    const service = document.getElementById('modalServiceSelect').value;
-    const period = document.getElementById('preferredPeriod').value;
-    const notes = document.getElementById('clientNotes').value.trim();
-
-    let text = `Olá, Lígia! Me chamo *${name}* e gostaria de agendar uma avaliação no Espaço Ligia de Mayor.\n\n`;
-    text += `*Interesse:* ${service}\n`;
-    if (period) text += `*Período de preferência:* ${period}\n`;
-    if (notes) text += `*Mensagem/Queixa:* ${notes}\n`;
-
-    const encodedText = encodeURIComponent(text);
-    const whatsappUrl = `https://wa.me/5521997172737?text=${encodedText}`;
-
-    closeModal();
-    window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+    const data = new FormData(form);
+    const text = [
+      'Olá, equipe do Espaço Ligia de Mayor! Gostaria de solicitar minha avaliação.',
+      '',
+      '*Nome:* ' + data.get('name').trim(),
+      '*WhatsApp / telefone:* ' + phone.value.trim(),
+      '*Região / necessidade:* ' + data.get('region'),
+      '*Tempo de desconforto:* ' + data.get('duration'),
+      '*Intensidade (0 a 10):* ' + data.get('pain') + '/10',
+      '*Principal objetivo:* ' + data.get('goal'),
+      '*Modalidade de interesse:* ' + (document.getElementById('modalServiceSelect').value || 'Quero orientação na avaliação'),
+      '',
+      'Quero saber os horários disponíveis para minha avaliação individual.'
+    ].join('\n');
+    window.location.assign('https://wa.me/5521997172737?text=' + encodeURIComponent(text));
   });
 }
 
