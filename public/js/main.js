@@ -4,16 +4,42 @@
  * JavaScript Vanilla moderno, modular e otimizado para carregamento rápido
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  initHeaderScroll();
-  initHeroVideo();
-  initMobileMenu();
-  initFaqAccordion();
-  initSmoothScroll();
-  initCopyAddress();
-  initAssessmentModal();
-  initDynamicYear();
-});
+/**
+ * Função utilitária para inicializar módulos com isolamento de falhas.
+ * Garante que a falha em um recurso (como vídeo de fundo) não bloqueie o questionário.
+ */
+function safeRun(moduleName, fn) {
+  try {
+    fn();
+  } catch (error) {
+    console.error(`[Espaço Lígia] Falha ao inicializar módulo "${moduleName}":`, error);
+  }
+}
+
+/**
+ * Ponto de entrada principal da aplicação.
+ * Executa com suporte a DOM em carregamento ou já pronto (document.readyState).
+ */
+function initAllModules() {
+  // 1. O Modal de Avaliação é a funcionalidade mais crítica: inicializado em 1º lugar
+  safeRun('initAssessmentModal', initAssessmentModal);
+
+  // 2. Demais módulos visuais e interativos com isolamento de erros
+  safeRun('initHeaderScroll', initHeaderScroll);
+  safeRun('initHeroVideo', initHeroVideo);
+  safeRun('initMobileMenu', initMobileMenu);
+  safeRun('initFaqAccordion', initFaqAccordion);
+  safeRun('initSmoothScroll', initSmoothScroll);
+  safeRun('initCopyAddress', initCopyAddress);
+  safeRun('initDynamicYear', initDynamicYear);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAllModules, { once: true });
+} else {
+  // DOMContentLoaded já ocorreu antes da execução deste script
+  initAllModules();
+}
 
 /**
  * 1. Efeito de Sombra e Transparência no Header ao Rolar
@@ -63,8 +89,11 @@ function initHeroVideo() {
   const targetVideoUrl = (config.videoUrl || 'https://fisioligia.siteoficialpro.com/assets/hero-studio-ligia.mp4').trim();
 
   // 1. Respeito à acessibilidade de movimento reduzido e economia de dados móveis
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const isDataSaver = navigator.connection && navigator.connection.saveData === true;
+  const prefersReducedMotion = Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  let isDataSaver = false;
+  try {
+    isDataSaver = Boolean(navigator.connection && navigator.connection.saveData === true);
+  } catch (err) {}
 
   if (prefersReducedMotion || isDataSaver) {
     if (videoWrapper) videoWrapper.style.display = 'none';
@@ -362,11 +391,14 @@ function showToast(message) {
 function initAssessmentModal() {
   const modalBackdrop = document.getElementById('assessmentModal') || document.getElementById('bookingModal');
   const closeButton = document.getElementById('closeAssessmentModal') || document.getElementById('closeBookingModal');
-  const triggerSelectors = '.open-assessment-modal, .open-booking-modal, [data-open-assessment]';
-  const openButtons = document.querySelectorAll(triggerSelectors);
+  const triggerSelectors = '[data-open-assessment], .open-assessment-modal, .open-booking-modal';
   const form = document.getElementById('assessmentForm') || document.getElementById('quickBookingForm');
 
   if (!modalBackdrop || !closeButton) return;
+
+  // Evita inicialização duplicada
+  if (modalBackdrop.dataset.initialized === 'true') return;
+  modalBackdrop.dataset.initialized = 'true';
 
   // Elementos da Escala de Dor/Desconforto
   const painInput = document.getElementById('painRangeInput');
@@ -590,16 +622,8 @@ function initAssessmentModal() {
     });
   }
 
-  // 1. Listeners de abertura diretos em todos os botões identificados
-  openButtons.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const region = btn.getAttribute('data-region') || btn.getAttribute('data-service') || '';
-      openModal(region, btn);
-    });
-  });
-
-  // 2. Delegação global de eventos no document para capturar qualquer elemento de abertura
+  // Delegação central de eventos no document para capturar qualquer elemento de abertura
+  // (Reconhece cliques em textos, ícones SVG e elementos aninhados e evita listeners duplicados)
   document.addEventListener('click', (e) => {
     const trigger = e.target.closest(triggerSelectors);
     if (trigger) {

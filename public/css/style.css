@@ -773,9 +773,11 @@ ul, ol {
 .hero-actions-row {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.875rem;
   margin-bottom: 1.75rem;
+  width: 100%;
 }
 
 .hero-actions-row .btn {
@@ -783,6 +785,11 @@ ul, ol {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.25;
 }
 
 /* Prova Social Integrada ao Cartão Hero */

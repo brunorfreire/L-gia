@@ -32,7 +32,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;0,800;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- Folha de Estilos Modular CSS3 -->
-  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./css/style.css?v=ligia-20261005-03" />
 
   <!-- Dados Estruturados Schema.org (LocalBusiness / Fisioterapia) -->
   <script type="application/ld+json">
@@ -124,7 +124,7 @@
 
       <!-- Ações do Cabeçalho à Direita -->
       <div class="header-actions">
-        <button type="button" class="btn btn-blue-deep btn-sm open-assessment-modal" aria-label="Abrir questionário Quero minha avaliação">
+        <button type="button" class="btn btn-blue-deep btn-sm open-assessment-modal" data-open-assessment aria-label="Abrir questionário Quero minha avaliação">
           <svg class="header-cta-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
             <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -161,7 +161,7 @@
     </div>
 
     <div class="mobile-nav-footer">
-      <button type="button" class="btn btn-turquoise btn-lg open-assessment-modal" style="width: 100%; margin-bottom: 0.75rem;" aria-label="Abrir questionário Quero minha avaliação">
+      <button type="button" class="btn btn-turquoise btn-lg open-assessment-modal" data-open-assessment style="width: 100%; margin-bottom: 0.75rem;" aria-label="Abrir questionário Quero minha avaliação">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
           <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -242,7 +242,7 @@
           </p>
 
           <div class="hero-actions-row">
-            <button type="button" class="btn btn-turquoise btn-lg open-assessment-modal" id="heroCtaEvaluation" aria-label="Quero minha avaliação">
+            <button type="button" class="btn btn-turquoise btn-lg open-assessment-modal" id="heroCtaEvaluation" data-open-assessment aria-label="Quero minha avaliação">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                 <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -409,7 +409,7 @@
               Diagnóstico biomecânico preciso e tratamento focado na causa raiz: lombalgias, hérnias discais, cervicalgias, ombros e reabilitação funcional pós-lesão ou cirurgia.
             </p>
           </div>
-          <a href="#" class="trio-card-link open-assessment-modal" data-region="Coluna lombar / nervo ciático">
+          <a href="#avaliacao" class="trio-card-link open-assessment-modal" data-open-assessment data-region="Coluna lombar / nervo ciático" role="button">
             <span>Saiba mais sobre Fisioterapia</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -432,7 +432,7 @@
               Aulas dinâmicas e criativas em equipamentos autênticos (Reformer, Cadillac e Columpio). Supervisão fisioterapêutica contínua para fortalecimento do core, ganho de flexibilidade e postura sem impacto nas articulações.
             </p>
           </div>
-          <a href="#" class="trio-card-link open-assessment-modal" data-region="Postura e alinhamento">
+          <a href="#avaliacao" class="trio-card-link open-assessment-modal" data-open-assessment data-region="Postura e alinhamento" role="button">
             <span>Agendar aula experimental</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -455,7 +455,7 @@
               Método de Cadeias Musculares G.D.S., Acupuntura, Dry Needling (agulhamento a seco), Liberação Miofascial e Medicina Tradicional Chinesa para desinflamar e restaurar o equilíbrio do organismo.
             </p>
           </div>
-          <a href="#" class="trio-card-link open-assessment-modal" data-region="Bem-estar, mobilidade e prevenção">
+          <a href="#avaliacao" class="trio-card-link open-assessment-modal" data-open-assessment data-region="Bem-estar, mobilidade e prevenção" role="button">
             <span>Conhecer as terapias</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -501,7 +501,7 @@
               <span class="service-tag-badge">Coluna &amp; Articulações</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-assessment-modal" data-region="Coluna lombar / nervo ciático">
+          <a href="#avaliacao" class="service-card-action open-assessment-modal" data-open-assessment data-region="Coluna lombar / nervo ciático" role="button">
             <span>Agendar Consulta</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -528,7 +528,7 @@
               <span class="service-tag-badge">Fortalecimento Seguro</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-assessment-modal" data-region="Postura e alinhamento">
+          <a href="#avaliacao" class="service-card-action open-assessment-modal" data-open-assessment data-region="Postura e alinhamento" role="button">
             <span>Experimentar Aula</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -557,7 +557,7 @@
               <span class="service-tag-badge">Postura Global</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-assessment-modal" data-region="Postura e alinhamento">
+          <a href="#avaliacao" class="service-card-action open-assessment-modal" data-open-assessment data-region="Postura e alinhamento" role="button">
             <span>Saber Mais</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -586,7 +586,7 @@
               <span class="service-tag-badge">Movimento Criativo</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-assessment-modal" data-region="Bem-estar, mobilidade e prevenção">
+          <a href="#avaliacao" class="service-card-action open-assessment-modal" data-open-assessment data-region="Bem-estar, mobilidade e prevenção" role="button">
             <span>Conhecer o Columpio</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -601,7 +601,7 @@
             <div class="service-icon-holder">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"></path>
               </svg>
             </div>
             <h3 class="service-item-title">Terapias Integrativas &amp; MTC</h3>
@@ -613,7 +613,7 @@
               <span class="service-tag-badge">Dry Needling</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-assessment-modal" data-region="Bem-estar, mobilidade e prevenção">
+          <a href="#avaliacao" class="service-card-action open-assessment-modal" data-open-assessment data-region="Bem-estar, mobilidade e prevenção" role="button">
             <span>Conhecer Terapias</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -640,7 +640,7 @@
               <span class="service-tag-badge">Alívio de Rigidez</span>
             </div>
           </div>
-          <a href="#" class="service-card-action open-assessment-modal" data-region="Cervical, pescoço e ombros">
+          <a href="#avaliacao" class="service-card-action open-assessment-modal" data-open-assessment data-region="Cervical, pescoço e ombros" role="button">
             <span>Agendar Sessão</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1040,7 +1040,7 @@
             </svg>
             <span>Agendar pelo WhatsApp (21) 99717-2737</span>
           </a>
-          <button type="button" class="btn btn-white btn-lg open-assessment-modal">
+          <button type="button" class="btn btn-white btn-lg open-assessment-modal" data-open-assessment aria-label="Abrir questionário Quero minha avaliação">
             <span>Quero minha avaliação</span>
           </button>
         </div>
@@ -1644,9 +1644,9 @@
     </div>
   </div>
 
-  <!-- Scripts Vanilla JavaScript -->
-  <script src="./js/hero-config.js"></script>
-  <script src="./js/main.js"></script>
+  <!-- Scripts Vanilla JavaScript com Controle de Versão de Cache -->
+  <script src="./js/hero-config.js?v=ligia-20261005-03"></script>
+  <script src="./js/main.js?v=ligia-20261005-03"></script>
 
 </body>
 </html>
