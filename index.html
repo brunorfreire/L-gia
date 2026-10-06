@@ -296,29 +296,22 @@
     <div class="container">
       <div class="institution-grid">
         
-        <!-- Fotografia Real / Card Visual à Esquerda -->
-        <div class="institution-photo-card">
-          <img
-            src="./assets/dra-ligia-atendimento.jpg"
-            alt="Atendimento fisioterapêutico acolhedor no Espaço Lígia de Mayor"
-            class="institution-img"
-            onerror="this.style.display='none'"
-            loading="lazy"
-          />
-          <!-- Fallback Visual Harmonioso -->
-          <div style="width: 100%; height: 100%; min-height: 380px; background: linear-gradient(135deg, #EAF6F8 0%, #D8EFF2 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2.5rem; text-align: center;">
-            <div style="width: 70px; height: 70px; border-radius: 50%; background: #FFFFFF; display: flex; align-items: center; justify-content: center; color: var(--color-turquoise); box-shadow: var(--shadow-md); margin-bottom: 1.25rem;">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-              </svg>
-            </div>
-            <h4 style="font-size: 1.25rem; font-weight: 700; color: var(--color-blue-deep); margin-bottom: 0.5rem;">
-              Atendimento Humanizado &amp; Preciso
-            </h4>
-            <p style="font-size: 0.875rem; color: var(--color-text-muted); max-width: 290px; line-height: 1.6; margin-bottom: 0;">
-              Onde o conhecimento biomecânico da fisioterapia se encontra com o acolhimento, o afeto e a escuta individual de cada dor.
-            </p>
+        <!-- Fotografia Profissional da Lígia de Mayor à Esquerda -->
+<div class="institution-portrait-wrapper">
+  <div class="institution-photo-card">
+    <img
+      src="https://fisioligia.siteoficialpro.com/assets/ligia-de-mayor.jpg"
+      alt="Lígia de Mayor, fisioterapeuta"
+      class="institution-img"
+      width="480"
+      height="640"
+      loading="lazy"
+      decoding="async"
+    />
           </div>
+          <figcaption class="institution-photo-caption">
+            Lígia de Mayor | Fisioterapeuta
+          </figcaption>
         </div>
 
         <!-- Painel de Conteúdo em Fundo Cinza Muito Claro à Direita -->
@@ -1263,8 +1256,10 @@
         <div>
           &copy; <span id="currentYear">2026</span> Espaço Ligia de Mayor - Fisioterapia e Pilates. Todos os direitos reservados.
         </div>
-        <div>
-          CREFITO · Copacabana, Rio de Janeiro - RJ
+        <div class="footer-bottom-right-col">
+          <span>CREFITO · Copacabana, Rio de Janeiro - RJ</span>
+          <span class="footer-dot-divider" aria-hidden="true">·</span>
+          <a href="#area-profissionais" id="btnOpenPrivateArea" class="footer-professional-link">Área dos profissionais</a>
         </div>
       </div>
     </div>
@@ -1644,9 +1639,439 @@
     </div>
   </div>
 
-  <!-- Scripts Vanilla JavaScript com Controle de Versão de Cache -->
+  <!-- ========================================================================
+       ÁREA PRIVADA DOS PROFISSIONAIS (SUPABASE AUTH + POSTGRESQL + REALTIME)
+       ======================================================================== -->
+  <div 
+    id="privateAreaModal" 
+    class="pa-modal-backdrop" 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="privateAreaTitle" 
+    aria-hidden="true" 
+    hidden
+    style="display: none;"
+  >
+    <div class="pa-modal-card">
+      
+      <!-- Topo do Modal -->
+      <div class="pa-modal-header">
+        <div class="pa-modal-header-branding">
+          <div class="pa-brand-badge">ÁREA PRIVADA</div>
+          <h2 class="pa-modal-title" id="privateAreaTitle">Espaço Ligia de Mayor</h2>
+          <p class="pa-modal-subtitle">Reserva de Salas e Gestão de Espaços</p>
+        </div>
+        <button 
+          type="button" 
+          id="closePrivateAreaModal" 
+          class="pa-modal-close-btn" 
+          aria-label="Fechar área privada de profissionais"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Banner de Notificação Realtime -->
+      <div id="realtimeNoticeBanner" class="pa-realtime-banner" aria-live="polite"></div>
+
+      <!-- PAINEL 1: LOGIN DE PROFISSIONAIS (SEM CADASTRO PÚBLICO) -->
+      <div id="panelLogin" class="pa-panel">
+        <div class="pa-panel-intro">
+          <div class="pa-intro-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </div>
+          <h3>Acesso dos Profissionais</h3>
+          <p>Informe seu e-mail e senha autorizados pela coordenação para gerenciar horários e reservas.</p>
+        </div>
+
+        <div id="loginErrorMsg" class="pa-alert pa-alert-error" style="display: none;" role="alert"></div>
+
+        <form id="paLoginForm" class="pa-form" novalidate>
+          <div class="pa-field">
+            <label for="loginEmail" class="pa-label">E-mail cadastrado <span class="pa-req">*</span></label>
+            <input 
+              type="email" 
+              id="loginEmail" 
+              class="pa-input" 
+              placeholder="seuemail@exemplo.com" 
+              required 
+              autocomplete="email" 
+            />
+          </div>
+
+          <div class="pa-field">
+            <div class="pa-field-header">
+              <label for="loginPassword" class="pa-label">Senha de acesso <span class="pa-req">*</span></label>
+              <button type="button" id="btnForgotPassword" class="pa-link-btn">Esqueci minha senha</button>
+            </div>
+            <input 
+              type="password" 
+              id="loginPassword" 
+              class="pa-input" 
+              placeholder="••••••••" 
+              required 
+              autocomplete="current-password" 
+            />
+          </div>
+
+          <button type="submit" class="pa-btn pa-btn-primary pa-btn-block">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+              <polyline points="10 17 15 12 10 7"></polyline>
+              <line x1="15" y1="12" x2="3" y2="12"></line>
+            </svg>
+            <span>Entrar na Agenda</span>
+          </button>
+        </form>
+
+        <div class="pa-login-footer-notice">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span>
+            Não possui acesso? Somente profissionais previamente cadastrados pela administração do Espaço Ligia de Mayor podem reservar salas. Solicite suas credenciais à coordenação.
+          </span>
+        </div>
+      </div>
+
+      <!-- PAINEL 2: RECUPERAÇÃO DE SENHA -->
+      <div id="panelForgotPassword" class="pa-panel" style="display: none;">
+        <div class="pa-panel-intro">
+          <h3>Recuperar Senha</h3>
+          <p>Informe o e-mail cadastrado na clínica para receber instruções de redefinição.</p>
+        </div>
+
+        <div id="resetMsg" class="pa-alert" style="display: none;" role="status"></div>
+
+        <form id="paForgotPasswordForm" class="pa-form">
+          <div class="pa-field">
+            <label for="resetEmailInput" class="pa-label">Seu e-mail cadastrado</label>
+            <input 
+              type="email" 
+              id="resetEmailInput" 
+              class="pa-input" 
+              placeholder="seuemail@exemplo.com" 
+              required 
+            />
+          </div>
+
+          <button type="submit" class="pa-btn pa-btn-primary pa-btn-block">
+            Enviar link de redefinição
+          </button>
+
+          <button type="button" id="btnBackToLogin" class="pa-btn pa-btn-outline pa-btn-block" style="margin-top: 0.75rem;">
+            Voltar ao login
+          </button>
+        </form>
+      </div>
+
+      <!-- PAINEL 3: AJUDA DE CONFIGURAÇÃO DO SUPABASE (CASO AINDA NÃO PREENCHIDO) -->
+      <div id="panelConfigHelp" class="pa-panel" style="display: none;">
+        <div class="pa-panel-intro">
+          <div class="pa-intro-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+              <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+            </svg>
+          </div>
+          <h3>Configuração do Banco Supabase</h3>
+          <p>Para ativar a área de reservas, conecte seu projeto Supabase inserindo a Project URL e a Publishable Anon Key abaixo (ou edite em <code>js/supabase-config.js</code>).</p>
+        </div>
+
+        <form id="paCustomConfigForm" class="pa-form">
+          <div class="pa-field">
+            <label for="customSupabaseUrl" class="pa-label">Project URL (HTTPS)</label>
+            <input 
+              type="url" 
+              id="customSupabaseUrl" 
+              class="pa-input" 
+              placeholder="https://exemplo.supabase.co" 
+              required 
+            />
+          </div>
+
+          <div class="pa-field">
+            <label for="customSupabaseKey" class="pa-label">Publishable Key (Anon Key)</label>
+            <input 
+              type="text" 
+              id="customSupabaseKey" 
+              class="pa-input" 
+              placeholder="eyJhbGciOi..." 
+              required 
+            />
+            <small class="pa-help-text">Apenas a chave pública (anon/public). Nunca utilize a chave service_role.</small>
+          </div>
+
+          <button type="submit" class="pa-btn pa-btn-primary pa-btn-block">
+            Salvar e Conectar Agenda
+          </button>
+        </form>
+      </div>
+
+      <!-- PAINEL 4: DASHBOARD AUTENTICADO DO PROFISSIONAL / ADMIN -->
+      <div id="panelDashboard" class="pa-panel" style="display: none;">
+        
+        <!-- Barra de Perfil e Status Realtime -->
+        <div class="pa-dashboard-topbar">
+          <div class="pa-user-info">
+            <div class="pa-user-avatar" aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <div class="pa-user-meta">
+              <span id="paUserFullName" class="pa-user-name">Carregando...</span>
+              <span id="paUserRoleBadge" class="pa-badge pa-badge-pro">Profissional</span>
+            </div>
+          </div>
+
+          <div class="pa-topbar-actions">
+            <div id="realtimeStatusBadge" class="pa-realtime-badge pa-rt-offline" title="Status da sincronização em tempo real">
+              <span class="pa-dot"></span> Offline
+            </div>
+            <button type="button" id="btnRefreshSchedule" class="pa-icon-btn" aria-label="Atualizar agenda" title="Atualizar horários">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <polyline points="1 20 1 14 7 14"></polyline>
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+              </svg>
+            </button>
+            <button type="button" id="btnLogoutPA" class="pa-btn-logout" title="Sair da conta">
+              Sair
+            </button>
+          </div>
+        </div>
+
+        <!-- Abas de Navegação -->
+        <div class="pa-tabs-nav" role="tablist">
+          <button type="button" id="tabBtnSchedule" class="pa-tab-btn active" role="tab" aria-selected="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>Agenda &amp; Reservas</span>
+          </button>
+          <button type="button" id="tabBtnMyReservations" class="pa-tab-btn" role="tab" aria-selected="false">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span>Minhas Reservas</span>
+          </button>
+          <button type="button" id="tabBtnAdmin" class="pa-tab-btn" role="tab" aria-selected="false" style="display: none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <span>Bloqueios (Admin)</span>
+          </button>
+        </div>
+
+        <!-- ABA 1: AGENDA & DISPONIBILIDADE -->
+        <div id="tabContentSchedule" class="pa-tab-content">
+          <!-- Seleção de Espaço -->
+          <div class="pa-space-selector-block">
+            <span class="pa-section-label">Selecione o espaço:</span>
+            <div id="spacesPillsContainer" class="pa-spaces-pills-row"></div>
+          </div>
+
+          <!-- Controle de Data (Fuso America/Sao_Paulo) -->
+          <div class="pa-date-control-card">
+            <div class="pa-date-nav-row">
+              <button type="button" id="btnPrevDay" class="pa-btn-date-nav" aria-label="Dia anterior">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+              
+              <div class="pa-date-picker-wrap">
+                <input 
+                  type="date" 
+                  id="scheduleDateInput" 
+                  class="pa-date-native-input" 
+                  aria-label="Escolha a data da consulta"
+                />
+              </div>
+
+              <button type="button" id="btnNextDay" class="pa-btn-date-nav" aria-label="Próximo dia">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
+
+              <button type="button" id="btnToday" class="pa-btn-today">
+                Hoje
+              </button>
+            </div>
+
+            <div class="pa-date-info-row">
+              <span id="scheduleDateHeaderInfo" class="pa-date-header-text">Carregando...</span>
+              <span id="operatingHoursBadge" class="pa-badge pa-badge-teal">07:00 às 21:00</span>
+            </div>
+          </div>
+
+          <!-- Lista de Horários do Dia (Prioridade Mobile - Lista Vertical) -->
+          <div id="scheduleSlotsContainer" class="pa-schedule-container">
+            <div class="pa-loading-indicator">
+              <div class="pa-spinner"></div>
+              <span>Consultando disponibilidade...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 2: MINHAS RESERVAS -->
+        <div id="tabContentMyReservations" class="pa-tab-content" style="display: none;">
+          <div class="pa-tab-header-row">
+            <h4>Suas Reservas Confirmadas</h4>
+            <p>Consulte ou cancele horários agendados em seu nome. Cancelamentos liberam a vaga de forma atômica no PostgreSQL.</p>
+          </div>
+          <div id="myReservationsList"></div>
+        </div>
+
+        <!-- ABA 3: BLOQUEIOS ADMINISTRATIVOS (PERFIL ADMIN) -->
+        <div id="tabContentAdmin" class="pa-tab-content" style="display: none;">
+          <div class="pa-admin-block-card">
+            <h4>Criar Bloqueio Administrativo</h4>
+            <p>Bloqueie um espaço para manutenção, feriados ou eventos internos.</p>
+            
+            <form id="adminBlockForm" class="pa-form">
+              <div class="pa-field-row">
+                <div class="pa-field">
+                  <label for="adminBlockSpace" class="pa-label">Espaço</label>
+                  <select id="adminBlockSpace" class="pa-select" required>
+                    <option value="">Selecione um espaço...</option>
+                  </select>
+                </div>
+                <div class="pa-field">
+                  <label for="adminBlockTitle" class="pa-label">Título do Bloqueio</label>
+                  <input type="text" id="adminBlockTitle" class="pa-input" placeholder="Ex: Manutenção Preventiva" required />
+                </div>
+              </div>
+
+              <div class="pa-field-row">
+                <div class="pa-field">
+                  <label for="adminBlockStart" class="pa-label">Início</label>
+                  <input type="datetime-local" id="adminBlockStart" class="pa-input" required />
+                </div>
+                <div class="pa-field">
+                  <label for="adminBlockEnd" class="pa-label">Término</label>
+                  <input type="datetime-local" id="adminBlockEnd" class="pa-input" required />
+                </div>
+              </div>
+
+              <div class="pa-field">
+                <label for="adminBlockReason" class="pa-label">Motivo (Opcional)</label>
+                <input type="text" id="adminBlockReason" class="pa-input" placeholder="Detalhes do bloqueio..." />
+              </div>
+
+              <button type="submit" class="pa-btn pa-btn-primary">
+                Salvar Bloqueio no Banco
+              </button>
+            </form>
+          </div>
+
+          <div style="margin-top: 1.5rem;">
+            <h4>Bloqueios Ativos</h4>
+            <div id="adminBlocksList"></div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       DRAWER / SUB-MODAL DE CONFIRMAÇÃO DE RESERVA
+       ======================================================================== -->
+  <div id="bookingModalDrawer" class="pa-drawer-backdrop" hidden style="display: none;">
+    <div class="pa-drawer-card">
+      <div class="pa-drawer-header">
+        <h3 class="pa-drawer-title">Confirmar Reserva de Espaço</h3>
+        <button type="button" id="btnCloseBookingDrawer" class="pa-modal-close-btn" aria-label="Fechar formulário de reserva">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div id="bookingErrorAlert" class="pa-alert pa-alert-error" style="display: none;" role="alert"></div>
+
+      <form id="bookingDrawerForm" class="pa-form">
+        <div class="pa-field">
+          <label for="bookingSpaceSelect" class="pa-label">Espaço de Atendimento</label>
+          <select id="bookingSpaceSelect" class="pa-select" required></select>
+        </div>
+
+        <div class="pa-field">
+          <label for="bookingDateInput" class="pa-label">Data da Reserva</label>
+          <input type="date" id="bookingDateInput" class="pa-input" required />
+        </div>
+
+        <div class="pa-field-row">
+          <div class="pa-field">
+            <label for="bookingStartTime" class="pa-label">Início <span class="pa-req">*</span></label>
+            <select id="bookingStartTime" class="pa-select" required></select>
+          </div>
+          <div class="pa-field">
+            <label for="bookingEndTime" class="pa-label">Término <span class="pa-req">*</span></label>
+            <select id="bookingEndTime" class="pa-select" required></select>
+          </div>
+        </div>
+
+        <div class="pa-field">
+          <label for="bookingNotes" class="pa-label">Observações Internas (Opcional)</label>
+          <input 
+            type="text" 
+            id="bookingNotes" 
+            class="pa-input" 
+            placeholder="Apenas para sua organização interna" 
+          />
+          <small class="pa-help-text">Privacidade clínica: não informe nomes completos ou dados sensíveis de pacientes.</small>
+        </div>
+
+        <div class="pa-drawer-actions">
+          <button type="button" id="btnCancelBookingDrawer" class="pa-btn pa-btn-outline">
+            Voltar
+          </button>
+          <button type="submit" id="btnConfirmBooking" class="pa-btn pa-btn-primary">
+            Confirmar Reserva
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- OVERLAY DE CARREGAMENTO GLOBAL DA ÁREA PRIVADA -->
+  <div id="paLoadingOverlay" class="pa-loading-overlay" style="display: none;">
+    <div class="pa-loading-box">
+      <div class="pa-spinner"></div>
+      <span id="paLoadingText">Processando operação no banco...</span>
+    </div>
+  </div>
+
+  <!-- Scripts Vanilla JavaScript com Controle de Versão de Cache Estável -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./js/supabase-config.js?v=ligia-20261005-03"></script>
   <script src="./js/hero-config.js?v=ligia-20261005-03"></script>
   <script src="./js/main.js?v=ligia-20261005-03"></script>
+  <script src="./js/private-area.js?v=ligia-20261005-03"></script>
 
 </body>
 </html>
