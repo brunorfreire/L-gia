@@ -4,55 +4,44 @@
  * Espaço Lígia de Mayor - Fisioterapia e Pilates (Copacabana, RJ)
  * ============================================================================
  * 
- * Regras de Negócio e Acessibilidade:
- * 1. Abertura automática cerca de 1 segundo após página pronta para novo visitante.
- * 2. Suporte a parâmetro de teste ?previewEbook=1 (força exibição sem gravar dados).
- * 3. Chaves versionadas (v2) com fallback em memória para evitar bloqueios por iframes.
- * 4. Não abre simultaneamente se questionário ou área de profissionais estiver aberta;
- *    observa e aguarda o fechamento para reavaliar a abertura da oferta.
- * 5. Visitante que fechou ("Agora não", X, ESC ou backdrop): não reabre na mesma sessão.
- * 6. Visitante que concluiu acesso: suspende abertura por 30 dias.
- * 7. Reabertura manual sempre permitida pelo botão da seção permanente ([data-open-ebook]).
- * 8. Não rola a página ao abrir (permanece sobre a primeira seção).
+ * Fluxo Direto:
+ * 1. Visitante informa o primeiro nome e clica em "Quero meu guia gratuito" (ou pressiona Enter).
+ * 2. Validação: se vazio, exibe "Informe seu primeiro nome para solicitar o guia" e foca o campo.
+ * 3. Se preenchido, navega diretamente na mesma aba para o WhatsApp oficial (5521997172737)
+ *    com mensagem pré-preenchida e codificada com encodeURIComponent.
+ * 4. Popup em etapa única: sem segunda tela de sucesso, sem botões de download.
+ * 5. Frequência:
+ *    - Visitante novo: abertura automática após ~1 segundo do DOM pronto.
+ *    - Visitante que fechou ou clicou para WhatsApp: não reabre na mesma sessão.
+ *    - Sem bloqueio de 30 dias (apenas inicia a solicitação, não considera lead concluído).
+ *    - Parâmetro ?previewEbook=1 para teste forçado sem gravação de flags.
+ *    - Reabertura manual sempre permitida pelos botões [data-open-ebook].
  * ============================================================================
  */
 
 (function () {
   'use strict';
 
-  // Chaves de controle específicas e versionadas (v2) para esta campanha
+  // Chaves de controle de sessão específicas e versionadas (v4)
   const STORAGE_KEYS = {
-    SESSION_SHOWN: 'elm_ebook_v2_shown',
-    SESSION_DISMISSED: 'elm_ebook_v2_dismissed',
-    CONVERTED_UNTIL: 'elm_ebook_v2_converted_until'
+    SESSION_SHOWN: 'elm_rotina7m_v4_shown_session',
+    SESSION_DISMISSED: 'elm_rotina7m_v4_dismissed_session'
   };
 
-  // Tempo de espera para disparo suave após DOM pronto (~1 segundo)
+  // Tempo de espera para disparo automático (~1 segundo)
   const AUTO_OPEN_DELAY = 1000;
 
-  // Armazenamento em memória caso localStorage/sessionStorage esteja inacessível (ex: iframe sandbox)
+  // Armazenamento em memória caso cookies/storages estejam restritos (iframe / sandbox)
   const memoryStore = {
-    session: {},
-    local: {}
+    session: {}
   };
 
-  // Adaptador seguro contra restrições de terceiros / iframe / modo anônimo
   const safeStorage = {
     isSessionAvailable() {
       try {
         const testKey = '__elm_test_ss__';
         window.sessionStorage.setItem(testKey, '1');
         window.sessionStorage.removeItem(testKey);
-        return true;
-      } catch (e) {
-        return false;
-      }
-    },
-    isLocalAvailable() {
-      try {
-        const testKey = '__elm_test_ls__';
-        window.localStorage.setItem(testKey, '1');
-        window.localStorage.removeItem(testKey);
         return true;
       } catch (e) {
         return false;
@@ -74,33 +63,22 @@
       }
       memoryStore.session[key] = value;
     },
-    getLocal(key) {
-      if (this.isLocalAvailable()) {
-        try {
-          return window.localStorage.getItem(key);
-        } catch (e) {}
-      }
-      return memoryStore.local[key] || null;
-    },
-    setLocal(key, value) {
-      if (this.isLocalAvailable()) {
-        try {
-          window.localStorage.setItem(key, value);
-        } catch (e) {}
-      }
-      memoryStore.local[key] = value;
+    removeSession(key) {
+      try {
+        if (this.isSessionAvailable()) {
+          window.sessionStorage.removeItem(key);
+        }
+      } catch (e) {}
+      delete memoryStore.session[key];
     }
   };
 
   // Estado interno da campanha
   const state = {
     isOpen: false,
-    step: 'capture', // 'capture' | 'confirmed'
-    firstName: '',
     lastActiveTrigger: null,
-    pdfStatusChecked: false,
-    pdfAvailable: true,
-    autoOpenAttempted: false
+    autoOpenScheduled: false,
+    initialized: false
   };
 
   // Referências aos elementos do DOM
@@ -108,131 +86,92 @@
   let modalCard = null;
   let closeBtn = null;
   let dismissBtn = null;
-  let captureStep = null;
-  let confirmedStep = null;
   let form = null;
   let nameInput = null;
   let nameError = null;
-  let whatsappBtn = null;
-  let downloadBtn = null;
-  let downloadNotice = null;
-  let assessmentInviteBtn = null;
+  let submitBtn = null;
 
   /**
-   * Obtém as configurações do ebook
+   * Obtém configurações centrais
    */
   function getConfig() {
     return window.EBOOK_CONFIG || {
-      pdfUrl: './assets/rotina-matinal-7-minutos.pdf',
-      pdfFallbackUrl: 'https://fisioligia.siteoficialpro.com/assets/rotina-matinal-7-minutos.pdf',
-      whatsappNumber: '5521997172737',
-      autoOpenDismissDays: 30
+      whatsappNumber: '5521997172737'
     };
   }
 
   /**
-   * Verifica se o parâmetro de teste ?previewEbook=1 está presente na URL
+   * Verifica se o parâmetro de teste ?previewEbook=1 está presente
    */
   function isPreviewMode() {
     try {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('previewEbook') === '1';
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('previewEbook') === '1' || searchParams.get('previewEbook') === 'true') {
+        return true;
+      }
+      if (window.location.hash && (window.location.hash.includes('previewEbook=1') || window.location.hash.includes('previewEbook=true'))) {
+        return true;
+      }
+      return false;
     } catch (e) {
       return false;
     }
   }
 
   /**
-   * Verifica se o PDF está acessível na URL configurada
-   */
-  async function checkPdfAvailability() {
-    const config = getConfig();
-    const targetUrl = config.pdfUrl || './assets/rotina-matinal-7-minutos.pdf';
-    try {
-      const response = await fetch(targetUrl, { method: 'HEAD' });
-      const contentType = response.headers.get('content-type') || '';
-      if (response.ok && !contentType.includes('text/html')) {
-        state.pdfAvailable = true;
-      } else {
-        // Se HEAD for bloqueado em ambiente estático, tenta GET leve ou mantém disponível
-        state.pdfAvailable = true;
-      }
-    } catch (e) {
-      state.pdfAvailable = true;
-    }
-    state.pdfStatusChecked = true;
-  }
-
-  /**
-   * Checa se outra modal já está visível na tela
+   * Verifica se outro modal está aberto na tela (questionário de avaliação ou área profissional)
    */
   function isAnyOtherModalOpen() {
-    // 1. Questionário de avaliação
-    const assessmentModal = document.getElementById('assessmentModal') || document.getElementById('bookingModal');
-    if (assessmentModal) {
-      const isActive = assessmentModal.classList.contains('active');
-      const isVisible = assessmentModal.style.display === 'flex' || assessmentModal.style.display === 'block';
-      const isAriaOpen = assessmentModal.getAttribute('aria-hidden') === 'false';
-      if (isActive || (isVisible && isAriaOpen)) {
+    try {
+      const assessmentModal = document.getElementById('assessmentModal') || document.getElementById('bookingModal');
+      if (assessmentModal && assessmentModal.classList.contains('active')) {
         return true;
       }
-    }
 
-    // 2. Área privada de profissionais
-    const privateAreaModal = document.getElementById('privateAreaModal');
-    if (privateAreaModal) {
-      const isActive = privateAreaModal.classList.contains('active');
-      const isVisible = privateAreaModal.style.display === 'flex' || privateAreaModal.style.display === 'block';
-      const isAriaOpen = privateAreaModal.getAttribute('aria-hidden') === 'false';
-      if (isActive || (isVisible && isAriaOpen)) {
+      const privateAreaModal = document.getElementById('privateAreaModal');
+      if (privateAreaModal && privateAreaModal.classList.contains('active')) {
         return true;
       }
-    }
 
-    return false;
+      return false;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**
-   * Verifica se a abertura automática está permitida pelas regras de frequência
+   * Verifica elegibilidade de disparo automático
    */
   function canAutoOpen() {
-    // Modo de teste: sempre força a abertura para conferência
+    // Modo de teste forçado: sempre permite
     if (isPreviewMode()) {
       return true;
     }
 
     try {
-      // 1. Se o visitante fechou ou já viu nesta sessão
+      // Visitante que fechou o popup nesta sessão: não reabrir
       if (safeStorage.getSession(STORAGE_KEYS.SESSION_DISMISSED) === 'true') {
         return false;
       }
+
+      // Já foi apresentado nesta sessão: não reabrir
       if (safeStorage.getSession(STORAGE_KEYS.SESSION_SHOWN) === 'true') {
         return false;
       }
 
-      // 2. Se o visitante concluiu o fluxo de acesso nos últimos 30 dias
-      const convertedUntil = safeStorage.getLocal(STORAGE_KEYS.CONVERTED_UNTIL);
-      if (convertedUntil) {
-        const timestamp = parseInt(convertedUntil, 10);
-        if (Number.isFinite(timestamp) && Date.now() < timestamp) {
-          return false;
-        }
-      }
-
-      // 3. Se outra modal estiver aberta no momento
+      // Se outro modal estiver aberto neste momento
       if (isAnyOtherModalOpen()) {
         return false;
       }
 
       return true;
     } catch (e) {
-      // Fallback em memória seguro
-      return !memoryStore.session[STORAGE_KEYS.SESSION_SHOWN];
+      return !memoryStore.session[STORAGE_KEYS.SESSION_SHOWN] && !memoryStore.session[STORAGE_KEYS.SESSION_DISMISSED];
     }
   }
 
   /**
-   * Registra que o popup foi efetivamente aberto nesta sessão
+   * Marca a oferta como exibida nesta sessão (após abertura efetiva)
    */
   function markShown() {
     if (isPreviewMode()) return;
@@ -242,7 +181,7 @@
   }
 
   /**
-   * Registra que o visitante fechou o popup (não reabrir na mesma sessão)
+   * Marca a oferta como fechada nesta sessão para evitar repetição automática
    */
   function markDismissedSession() {
     if (isPreviewMode()) return;
@@ -252,23 +191,8 @@
   }
 
   /**
-   * Registra a conversão (suspende a abertura automática por 30 dias)
-   */
-  function markConvertedLongTerm() {
-    if (isPreviewMode()) return;
-    try {
-      const config = getConfig();
-      const days = config.autoOpenDismissDays || 30;
-      const expireTime = Date.now() + (days * 24 * 60 * 60 * 1000);
-      safeStorage.setLocal(STORAGE_KEYS.CONVERTED_UNTIL, expireTime.toString());
-      safeStorage.setSession(STORAGE_KEYS.SESSION_DISMISSED, 'true');
-      safeStorage.setSession(STORAGE_KEYS.SESSION_SHOWN, 'true');
-    } catch (e) {}
-  }
-
-  /**
    * Abre o popup do Ebook
-   * Função única compartilhada pelo disparo automático e pelos botões manuais
+   * Função única compartilhada pelo disparo automático e pelos botões da seção permanente
    */
   function openEbookModal(triggerElement = null) {
     if (!modalBackdrop) {
@@ -276,7 +200,7 @@
       if (!modalBackdrop) return;
     }
 
-    // Se outra modal estiver aberta no momento e for disparo automático, não abre
+    // Se outro modal estiver aberto e for disparo automático, não sobrepõe
     if (isAnyOtherModalOpen() && !triggerElement) {
       return;
     }
@@ -301,36 +225,43 @@
       document.body.style.overflow = '';
     }
 
-    // Exibe a modal garantindo atributos consistentes
+    // Limpa erro anterior ao reabrir
+    if (nameError) {
+      nameError.style.display = 'none';
+      nameError.textContent = '';
+    }
+    if (nameInput) {
+      nameInput.removeAttribute('aria-invalid');
+    }
+
+    // Sincroniza estado de exibição
     modalBackdrop.removeAttribute('hidden');
     modalBackdrop.hidden = false;
+    modalBackdrop.style.removeProperty('display');
     modalBackdrop.style.display = 'flex';
     modalBackdrop.setAttribute('aria-hidden', 'false');
     modalBackdrop.classList.add('active');
-    document.body.classList.add('modal-open');
+    if (document.body) {
+      document.body.classList.add('modal-open');
+    }
     state.isOpen = true;
 
     // Registra como exibido SOMENTE após o modal estar efetivamente aberto
     markShown();
 
-    // Checagem em segundo plano do PDF se ainda não feita
-    if (!state.pdfStatusChecked) {
-      checkPdfAvailability().then(updateDownloadButtonState);
-    }
-
-    // Foco acessível sem forçar rolagem na página (permanece sobre a primeira seção)
+    // Foco acessível sem rolar a página para fora da primeira seção
     setTimeout(() => {
-      if (state.step === 'capture' && nameInput) {
+      if (nameInput) {
         try {
           nameInput.focus({ preventScroll: true });
         } catch (e) {
-          nameInput.focus();
+          try { nameInput.focus(); } catch (e2) {}
         }
       } else if (closeBtn) {
         try {
           closeBtn.focus({ preventScroll: true });
         } catch (e) {
-          closeBtn.focus();
+          try { closeBtn.focus(); } catch (e2) {}
         }
       }
     }, 60);
@@ -349,15 +280,15 @@
     modalBackdrop.style.display = 'none';
     state.isOpen = false;
 
-    // Marca como fechado nesta sessão (evita reabertura automática na mesma visita)
+    // Marca como fechado nesta sessão para não reabrir automaticamente
     markDismissedSession();
 
     // Se nenhuma outra modal estiver aberta, restaura rolagem do body
-    if (!isAnyOtherModalOpen()) {
+    if (!isAnyOtherModalOpen() && document.body) {
       document.body.classList.remove('modal-open');
     }
 
-    // Restaura o foco para o elemento disparador original
+    // Restaura o foco para o elemento disparador
     if (state.lastActiveTrigger && typeof state.lastActiveTrigger.focus === 'function') {
       try {
         state.lastActiveTrigger.focus({ preventScroll: true });
@@ -370,133 +301,88 @@
   }
 
   /**
-   * Altera a etapa visível dentro da modal ('capture' | 'confirmed')
-   */
-  function setStep(newStep) {
-    state.step = newStep;
-    if (captureStep && confirmedStep) {
-      if (newStep === 'confirmed') {
-        captureStep.style.display = 'none';
-        confirmedStep.style.display = 'block';
-        updateConfirmationButtons();
-        setTimeout(() => {
-          if (whatsappBtn) {
-            try {
-              whatsappBtn.focus({ preventScroll: true });
-            } catch (e) {
-              whatsappBtn.focus();
-            }
-          }
-        }, 60);
-      } else {
-        captureStep.style.display = 'block';
-        confirmedStep.style.display = 'none';
-        if (nameInput) {
-          try {
-            nameInput.focus({ preventScroll: true });
-          } catch (e) {
-            nameInput.focus();
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Atualiza o estado visual do botão de download
-   */
-  function updateDownloadButtonState() {
-    if (!downloadBtn) return;
-    const config = getConfig();
-    const pdfUrl = config.pdfUrl || './assets/rotina-matinal-7-minutos.pdf';
-
-    downloadBtn.href = pdfUrl;
-    downloadBtn.setAttribute('download', 'rotina-matinal-7-minutos.pdf');
-    downloadBtn.classList.remove('disabled');
-    downloadBtn.removeAttribute('aria-disabled');
-    if (downloadNotice) {
-      downloadNotice.style.display = 'none';
-    }
-  }
-
-  /**
-   * Atualiza os botões da tela de confirmação com link do WhatsApp e do PDF
-   */
-  function updateConfirmationButtons() {
-    const config = getConfig();
-    const cleanName = (state.firstName || 'Visitante').trim();
-
-    // Mensagem exata solicitada:
-    // “Olá, equipe do Espaço Ligia de Mayor! Meu nome é [NOME]. Vi o guia Rotina Matinal de 7 Minutos no site e gostaria de receber o material gratuito.”
-    const text = `Olá, equipe do Espaço Ligia de Mayor! Meu nome é ${cleanName}. Vi o guia Rotina Matinal de 7 Minutos no site e gostaria de receber o material gratuito.`;
-    const encodedText = encodeURIComponent(text);
-    const waPhone = config.whatsappNumber || '5521997172737';
-    const waUrl = `https://wa.me/${waPhone}?text=${encodedText}`;
-
-    if (whatsappBtn) {
-      whatsappBtn.href = waUrl;
-    }
-
-    updateDownloadButtonState();
-  }
-
-  /**
    * Validação e submissão do formulário de captação
+   * Funciona tanto pelo clique no botão quanto pelo Enter no campo
    */
   function handleFormSubmit(e) {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     if (!nameInput) return;
 
-    const rawName = nameInput.value.trim();
-    // Validação básica do primeiro nome (mínimo 2 caracteres)
-    if (!rawName || rawName.length < 2 || !/^[A-Za-zÀ-ÖØ-öø-ÿ\s'-]+$/.test(rawName)) {
+    const rawName = (nameInput.value || '').trim();
+
+    // Validação: campo não pode estar vazio
+    if (!rawName) {
       if (nameError) {
+        nameError.textContent = 'Informe seu primeiro nome para solicitar o guia';
         nameError.style.display = 'block';
-        nameError.textContent = 'Por favor, informe seu primeiro nome para continuarmos.';
       }
       nameInput.setAttribute('aria-invalid', 'true');
-      nameInput.focus();
+      try {
+        nameInput.focus({ preventScroll: true });
+      } catch (err) {
+        nameInput.focus();
+      }
       return;
     }
 
     if (nameError) {
       nameError.style.display = 'none';
+      nameError.textContent = '';
     }
     nameInput.removeAttribute('aria-invalid');
 
-    // Captura apenas o primeiro nome em memória de execução
-    const firstName = rawName.split(' ')[0];
-    state.firstName = firstName;
+    // Extrai o primeiro nome (preservando acentos e caracteres especiais)
+    const firstName = rawName.split(/\s+/)[0];
 
-    // Registra a conclusão da etapa de acesso (suspende por 30 dias)
-    markConvertedLongTerm();
+    // Mensagem oficial exigida:
+    // “Olá, equipe do Espaço Ligia de Mayor! Meu nome é [NOME]. Vim pelo site através da oferta do ebook gratuito ‘Rotina Matinal de 7 Minutos’ e gostaria de receber o material por aqui. 😊”
+    const message = `Olá, equipe do Espaço Ligia de Mayor! Meu nome é ${firstName}. Vim pelo site através da oferta do ebook gratuito ‘Rotina Matinal de 7 Minutos’ e gostaria de receber o material por aqui. 😊`;
 
-    // Avança para a etapa de confirmação
-    setStep('confirmed');
+    const config = getConfig();
+    const phone = config.whatsappNumber || '5521997172737';
+    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+    // Marca que o popup foi concluído nesta sessão para não reabrir automaticamente ao retornar
+    markDismissedSession();
+
+    // Navegação direta na mesma aba imediatamente no evento do usuário (sem timers/async)
+    // para garantir abertura confiável e evitar bloqueadores de popups
+    window.location.href = waUrl;
   }
 
   /**
-   * Observa fechamento de outros modais para reavaliar abertura se necessário
+   * Observa fechamento de outros modais para reavaliar abertura da oferta
    */
   function watchOtherModalsForClosing() {
-    const assessmentModal = document.getElementById('assessmentModal') || document.getElementById('bookingModal');
-    const privateAreaModal = document.getElementById('privateAreaModal');
+    let checkInterval = null;
+    let observer = null;
 
-    function checkAndTrigger() {
-      if (!state.isOpen && !isAnyOtherModalOpen() && canAutoOpen()) {
+    function tryTriggerAfterOtherClosed() {
+      if (!isAnyOtherModalOpen() && canAutoOpen() && !state.isOpen) {
+        if (checkInterval) clearInterval(checkInterval);
+        if (observer) observer.disconnect();
         setTimeout(() => {
-          if (!state.isOpen && !isAnyOtherModalOpen() && canAutoOpen()) {
+          if (!isAnyOtherModalOpen() && canAutoOpen() && !state.isOpen) {
             openEbookModal(null);
           }
-        }, 500);
+        }, 600);
       }
     }
 
+    checkInterval = setInterval(tryTriggerAfterOtherClosed, 600);
+    setTimeout(() => {
+      if (checkInterval) clearInterval(checkInterval);
+    }, 45000);
+
     if (window.MutationObserver) {
-      const observer = new MutationObserver(() => {
-        checkAndTrigger();
+      observer = new MutationObserver(() => {
+        tryTriggerAfterOtherClosed();
       });
 
+      const assessmentModal = document.getElementById('assessmentModal') || document.getElementById('bookingModal');
+      const privateAreaModal = document.getElementById('privateAreaModal');
       if (assessmentModal) {
         observer.observe(assessmentModal, { attributes: true, attributeFilter: ['class', 'style', 'aria-hidden'] });
       }
@@ -507,14 +393,13 @@
   }
 
   /**
-   * Agenda o disparo automático após o tempo especificado
+   * Agenda abertura automática após ~1 segundo do DOM pronto
    */
   function scheduleAutoOpen() {
-    if (state.autoOpenAttempted) return;
-    state.autoOpenAttempted = true;
+    if (state.autoOpenScheduled) return;
+    state.autoOpenScheduled = true;
 
     setTimeout(() => {
-      // Se houver outro modal aberto no momento, inicia observação para disparar quando fechar
       if (isAnyOtherModalOpen()) {
         watchOtherModalsForClosing();
         return;
@@ -527,34 +412,45 @@
   }
 
   /**
-   * Inicialização dos elementos e eventos da campanha
+   * Inicialização do popup e eventos
    */
   function initEbookCampaign() {
+    if (state.initialized) return;
+
     modalBackdrop = document.getElementById('ebookLeadModal');
     if (!modalBackdrop) return;
+    state.initialized = true;
 
     modalCard = document.getElementById('ebookLeadCard');
     closeBtn = document.getElementById('closeEbookModal');
     dismissBtn = document.getElementById('btnDismissEbook');
-    captureStep = document.getElementById('ebookStepCapture');
-    confirmedStep = document.getElementById('ebookStepConfirmed');
     form = document.getElementById('ebookLeadForm');
     nameInput = document.getElementById('ebookUserName');
     nameError = document.getElementById('ebookNameError');
-    whatsappBtn = document.getElementById('btnEbookWhatsApp');
-    downloadBtn = document.getElementById('btnEbookDownload');
-    downloadNotice = document.getElementById('ebookDownloadNotice');
-    assessmentInviteBtn = document.getElementById('btnEbookToAssessment');
+    submitBtn = document.getElementById('btnSubmitEbook');
 
-    // Estado inicial estritamente oculto no carregamento
+    // Estado inicial estritamente oculto no HTML
     modalBackdrop.setAttribute('hidden', '');
     modalBackdrop.hidden = true;
     modalBackdrop.style.display = 'none';
     modalBackdrop.setAttribute('aria-hidden', 'true');
 
-    // Submissão do formulário
+    // Submissão do formulário (trata clique no botão submit e Enter no campo)
     if (form) {
       form.addEventListener('submit', handleFormSubmit);
+    }
+
+    // Limpa estado de erro assim que o usuário começa a digitar
+    if (nameInput) {
+      nameInput.addEventListener('input', () => {
+        if (nameInput.value.trim().length > 0) {
+          if (nameError) {
+            nameError.style.display = 'none';
+            nameError.textContent = '';
+          }
+          nameInput.removeAttribute('aria-invalid');
+        }
+      });
     }
 
     // Botão fechar (X)
@@ -573,84 +469,55 @@
       });
     }
 
-    // Fechar ao clicar no backdrop (overlay)
+    // Fechar ao clicar no backdrop escuro
     modalBackdrop.addEventListener('click', (e) => {
       if (e.target === modalBackdrop) {
         closeEbookModal();
       }
     });
 
-    // Tecla Escape para fechar
+    // Fechar com a tecla Escape
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && state.isOpen) {
         closeEbookModal();
       }
     });
 
-    // Clique no botão de WhatsApp: abre em nova aba
-    if (whatsappBtn) {
-      whatsappBtn.addEventListener('click', () => {
-        markConvertedLongTerm();
-      });
-    }
-
-    // Clique no botão de download do PDF
-    if (downloadBtn) {
-      downloadBtn.addEventListener('click', (e) => {
-        markConvertedLongTerm();
-        if (!state.pdfAvailable) {
-          e.preventDefault();
-          if (downloadNotice) {
-            downloadNotice.style.display = 'block';
-            downloadNotice.textContent = 'O arquivo do guia em PDF está aguardando ativação no servidor estático. Por gentileza, solicite no WhatsApp da equipe no botão acima.';
-          }
-        }
-      });
-    }
-
-    // Convite secundário: "Quero minha avaliação" fecha o popup do ebook e abre o questionário existente
-    if (assessmentInviteBtn) {
-      assessmentInviteBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        closeEbookModal();
-        if (typeof window.openAssessmentModal === 'function') {
-          setTimeout(() => {
-            window.openAssessmentModal('', assessmentInviteBtn);
-          }, 100);
-        }
-      });
-    }
-
-    // Gatilhos manuais da seção permanente e links pelo site ([data-open-ebook])
+    // Reabertura manual pelos botões da seção permanente ([data-open-ebook])
     document.addEventListener('click', (e) => {
       const trigger = e.target.closest('[data-open-ebook]');
       if (trigger) {
         e.preventDefault();
-        // Abertura manual sempre permitida
-        setStep('capture');
         if (nameInput) nameInput.value = '';
-        if (nameError) nameError.style.display = 'none';
+        if (nameError) {
+          nameError.style.display = 'none';
+          nameError.textContent = '';
+        }
         openEbookModal(trigger);
       }
     });
 
-    // Checagem em segundo plano da disponibilidade do PDF
-    checkPdfAvailability().then(updateDownloadButtonState);
-
-    // Dispara a rotina de abertura automática após ~1 segundo
+    // Agenda a abertura automática
     scheduleAutoOpen();
   }
 
-  // Expor API global compartilhada
+  // Expor API global unificada
   window.openEbookModal = function (trigger = null) {
-    setStep('capture');
+    if (nameInput) nameInput.value = '';
+    if (nameError) {
+      nameError.style.display = 'none';
+      nameError.textContent = '';
+    }
     openEbookModal(trigger);
   };
   window.closeEbookModal = closeEbookModal;
 
-  // Inicializa quando o DOM estiver pronto
-  if (document.readyState === 'loading') {
+  // Inicialização segura
+  if (document.getElementById('ebookLeadModal')) {
+    initEbookCampaign();
+  } else if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initEbookCampaign);
+    window.addEventListener('load', initEbookCampaign);
   } else {
     initEbookCampaign();
   }

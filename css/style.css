@@ -5087,7 +5087,8 @@ body.modal-open {
 .ebook-submit-btn {
   width: 100% !important;
   min-height: 52px !important;
-  height: 52px !important;
+  height: auto !important;
+  padding: 0.85rem 1.25rem !important;
   border-radius: 12px !important;
   background: #0E9AA7 !important;
   color: #FFFFFF !important;
@@ -5099,10 +5100,15 @@ body.modal-open {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 0.5rem !important;
+  gap: 0.6rem !important;
   box-shadow: 0 4px 14px rgba(14, 154, 167, 0.35) !important;
   transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
   box-sizing: border-box !important;
+}
+
+.ebook-submit-btn svg {
+  flex-shrink: 0 !important;
+  color: #FFFFFF !important;
 }
 
 .ebook-submit-btn:hover {
@@ -5120,11 +5126,21 @@ body.modal-open {
   outline-offset: 2px !important;
 }
 
+/* Texto de Apoio Abaixo do Botão Principal */
+.ebook-submit-helper {
+  font-size: 0.8125rem !important;
+  color: #475569 !important;
+  text-align: center !important;
+  line-height: 1.4 !important;
+  margin: 0.65rem 0 0.15rem 0 !important;
+  font-weight: 500 !important;
+}
+
 /* Link Secundário "Agora não" */
 .ebook-dismiss-btn {
   display: block !important;
   width: fit-content !important;
-  margin: 0.75rem auto 0 auto !important;
+  margin: 0.5rem auto 0 auto !important;
   background: transparent !important;
   border: none !important;
   color: #64748B !important;
@@ -5135,7 +5151,7 @@ body.modal-open {
   text-decoration: underline !important;
   text-underline-offset: 3px !important;
   min-height: 44px !important;
-  padding: 0.6rem 1rem !important;
+  padding: 0.5rem 1rem !important;
   border-radius: 8px !important;
   transition: color 0.2s ease !important;
   box-sizing: border-box !important;
@@ -5157,189 +5173,6 @@ body.modal-open {
   text-align: center !important;
   line-height: 1.45 !important;
   margin: 0.75rem 0 0 0 !important;
-}
-
-/* ============================================================================
-   ETAPA 2: CONFIRMAÇÃO & ENTREGA
-   ============================================================================ */
-.ebook-confirmed-banner {
-  text-align: center !important;
-  margin-bottom: 1.25rem !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-.ebook-confirmed-icon {
-  width: 52px !important;
-  height: 52px !important;
-  border-radius: 50% !important;
-  background: #EAF6F8 !important;
-  color: #0E9AA7 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  margin-bottom: 0.75rem !important;
-}
-
-.ebook-confirmed-title {
-  font-family: var(--font-heading, 'Montserrat', sans-serif) !important;
-  font-size: 1.1875rem !important;
-  font-weight: 800 !important;
-  color: #123D63 !important;
-  margin: 0 0 0.4rem 0 !important;
-  line-height: 1.3 !important;
-}
-
-.ebook-confirmed-explanation {
-  font-size: 0.875rem !important;
-  color: #475569 !important;
-  line-height: 1.45 !important;
-  margin: 0 !important;
-}
-
-.ebook-confirmed-actions-grid {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 0.75rem !important;
-  margin-bottom: 1.25rem !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-.ebook-action-channel-btn {
-  width: 100% !important;
-  min-height: 52px !important;
-  height: 52px !important;
-  border-radius: 12px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 0.6rem !important;
-  text-decoration: none !important;
-  font-weight: 700 !important;
-  font-size: 0.9375rem !important;
-  font-family: inherit !important;
-  box-sizing: border-box !important;
-  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
-  border: none !important;
-}
-
-.btn-whatsapp-green.ebook-action-channel-btn {
-  background: #25D366 !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3) !important;
-}
-
-.btn-whatsapp-green.ebook-action-channel-btn:hover {
-  background: #20BA5C !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.4) !important;
-}
-
-.btn-blue-deep.ebook-action-channel-btn {
-  background: #123D63 !important;
-  color: #FFFFFF !important;
-  box-shadow: 0 4px 14px rgba(18, 61, 99, 0.25) !important;
-}
-
-.btn-blue-deep.ebook-action-channel-btn:hover {
-  background: #0D2C47 !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 6px 18px rgba(18, 61, 99, 0.35) !important;
-}
-
-.ebook-action-channel-btn.disabled {
-  opacity: 0.6 !important;
-  pointer-events: none !important;
-  background-color: #94A3B8 !important;
-  border-color: #94A3B8 !important;
-  box-shadow: none !important;
-}
-
-.ebook-download-notice {
-  font-size: 0.8125rem !important;
-  color: #B45309 !important;
-  background: #FFFBEB !important;
-  border: 1px solid #FDE68A !important;
-  padding: 0.75rem !important;
-  border-radius: 8px !important;
-  line-height: 1.4 !important;
-  margin: 0 !important;
-  text-align: center !important;
-  box-sizing: border-box !important;
-}
-
-/* Convite Secundário: Cuidado Individualizado */
-.ebook-secondary-invite-card {
-  background: #F1F8F9 !important;
-  border: 1px solid rgba(67, 174, 187, 0.25) !important;
-  border-radius: 16px !important;
-  padding: 1rem 1.15rem !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 0.75rem !important;
-  align-items: flex-start !important;
-  box-sizing: border-box !important;
-  width: 100% !important;
-}
-
-@media (min-width: 440px) {
-  .ebook-secondary-invite-card {
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-  }
-}
-
-.ebook-secondary-text {
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-.ebook-secondary-tag {
-  font-size: 0.6875rem !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.08em !important;
-  text-transform: uppercase !important;
-  color: #0E9AA7 !important;
-  margin-bottom: 0.15rem !important;
-}
-
-.ebook-secondary-prompt {
-  font-family: var(--font-heading, 'Montserrat', sans-serif) !important;
-  font-size: 0.9375rem !important;
-  font-weight: 700 !important;
-  color: #123D63 !important;
-  margin: 0 0 0.15rem 0 !important;
-}
-
-.ebook-secondary-sub {
-  font-size: 0.75rem !important;
-  color: #64748B !important;
-  margin: 0 !important;
-  line-height: 1.35 !important;
-}
-
-#btnEbookToAssessment {
-  min-height: 42px !important;
-  border-radius: 10px !important;
-  background: #0E9AA7 !important;
-  color: #FFFFFF !important;
-  font-weight: 700 !important;
-  font-size: 0.8125rem !important;
-  border: none !important;
-  cursor: pointer !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  gap: 0.35rem !important;
-  padding: 0.5rem 0.85rem !important;
-  flex-shrink: 0 !important;
-  transition: background-color 0.2s ease !important;
-  font-family: inherit !important;
-}
-
-#btnEbookToAssessment:hover {
-  background: #0C8793 !important;
 }
 
 /* ============================================================================
@@ -5373,11 +5206,6 @@ body.modal-open {
   .ebook-benefits-compact-row {
     flex-direction: column !important;
     gap: 0.4rem !important;
-  }
-  
-  .ebook-action-channel-btn {
-    font-size: 0.875rem !important;
-    padding: 0.75rem !important;
   }
 }
 
