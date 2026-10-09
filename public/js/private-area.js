@@ -3,18 +3,21 @@
  * ESPAÇO LIGIA DE MAYOR - ÁREA PRIVADA DOS PROFISSIONAIS
  * ============================================================================
  * Integração completa com Supabase (Auth, PostgreSQL com Restrição de Exclusão,
- * RLS e Realtime) para reserva de salas e estúdios.
+ * RLS e Realtime) para reserva das salas:
+ * - Sala de Pilates
+ * - Sala de massoterapia
  * 
  * Regras principais:
  * - Apenas profissionais ativos autorizados pela administração
  * - Sem cadastro público (somente login e recuperação de senha)
  * - Perfis: Administrador ('admin') e Profissional ('professional')
  * - Fuso horário oficial: America/Sao_Paulo
+ * - Horários de funcionamento gerenciados dinamicamente por sala pelo admin
  * - Disponibilidade pública de terceiros exibida apenas como "Indisponível"
  *   sem expor nomes de profissionais ou pacientes
  * - Proteção atômica de concorrência com tratamento do erro 23P01:
  *   "Este horário acabou de ser reservado. Escolha outro horário."
- * - Atualização em tempo real via Supabase Realtime Channels
+ * - Atualização em tempo real via tabela availability_revisions (dados anônimos)
  * ============================================================================
  */
 
@@ -30,14 +33,17 @@
     session: null,
     profile: null, // { id, full_name, role, is_active }
     spaces: [],
+    operatingHours: [],
     selectedSpaceId: null,
     selectedDate: getTodayDateStringSP(),
     availabilitySlots: [],
     myReservations: [],
     adminBlocks: [],
+    adminUsers: [],
     realtimeChannel: null,
     realtimeStatus: 'disconnected', // 'connected', 'connecting', 'disconnected', 'error'
-    currentTab: 'schedule', // 'schedule', 'my_reservations', 'admin_blocks'
+    currentTab: 'schedule', // 'schedule', 'my_reservations', 'admin'
+    adminSubTab: 'hours', // 'hours', 'blocks', 'users'
     isLoading: false,
     lastActiveTrigger: null
   };
@@ -49,7 +55,6 @@
   function getTodayDateStringSP() {
     try {
       const now = new Date();
-      // Formata a data atual no fuso de São Paulo: YYYY-MM-DD
       const formatter = new Intl.DateTimeFormat('en-CA', {
         timeZone: TIMEZONE,
         year: 'numeric',
@@ -58,64 +63,61 @@
       });
       return formatter.format(now);
     } catch (e) {
-      return new Date().toISOString().split('T')[0];
+      const d = new Date();
+      return d.toISOString().split('T')[0];
     }
   }
 
   function formatDateFriendly(dateStr) {
     if (!dateStr) return '';
-    try {
-      const [year, month, day] = dateStr.split('-').map(Number);
-      const d = new Date(year, month - 1, day, 12, 0, 0);
-      const weekday = new Intl.DateTimeFormat('pt-BR', { weekday: 'long' }).format(d);
-      const dayMonth = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }).format(d);
-      return `${capitalize(weekday)}, ${dayMonth}`;
-    } catch (e) {
-      return dateStr;
-    }
-  }
-
-  function capitalize(str) {
-    if (!str) return '';
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
-  function formatTimeSP(isoString) {
-    if (!isoString) return '--:--';
-    try {
-      const d = new Date(isoString);
-      return new Intl.DateTimeFormat('pt-BR', {
-        timeZone: TIMEZONE,
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }).format(d);
-    } catch (e) {
-      return '--:--';
-    }
+    const [y, m, d] = dateStr.split('-');
+    const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const dateObj = new Date(Number(y), Number(m) - 1, Number(d), 12, 0, 0);
+    const dayOfWeek = days[dateObj.getDay()];
+    const monthName = months[Number(m) - 1];
+    return `${dayOfWeek}, ${d} de ${monthName}`;
   }
 
   function getDayOfWeek(dateStr) {
-    if (!dateStr) return 1;
     const [y, m, d] = dateStr.split('-').map(Number);
     const date = new Date(y, m - 1, d, 12, 0, 0);
     return date.getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
   }
 
-  function getOperatingHoursForDate(dateStr) {
+  function getOperatingHoursForDate(dateStr, spaceId) {
+    const targetSpaceId = spaceId || state.selectedSpaceId;
     const dow = getDayOfWeek(dateStr);
-    if (dow === 0) {
-      return { isOpen: false, startHour: 0, endHour: 0, label: 'Fechado aos domingos' };
+    const found = state.operatingHours.find(h => h.space_id === targetSpaceId && h.day_of_week === dow);
+
+    if (!found) {
+      return {
+        isOpen: false,
+        startHour: 7,
+        endHour: 21,
+        openingTime: '07:00',
+        closingTime: '21:00',
+        label: 'Horário de funcionamento não configurado pela administração'
+      };
     }
-    if (dow === 6) {
-      return { isOpen: true, startHour: 7, endHour: 14, label: 'Sábado: 07:00 às 14:00' };
-    }
-    return { isOpen: true, startHour: 7, endHour: 21, label: 'Segunda a Sexta: 07:00 às 21:00' };
+
+    const openH = parseInt(found.opening_time.split(':')[0], 10);
+    const closeH = parseInt(found.closing_time.split(':')[0], 10);
+    const openStr = found.opening_time.substring(0, 5);
+    const closeStr = found.closing_time.substring(0, 5);
+
+    return {
+      isOpen: found.is_open,
+      startHour: openH,
+      endHour: closeH,
+      openingTime: openStr,
+      closingTime: closeStr,
+      label: found.is_open ? `${openStr} às ${closeStr}` : 'Espaço fechado nesta data'
+    };
   }
 
   function buildIsoStringSP(dateStr, timeStr) {
-    // Converte YYYY-MM-DD e HH:MM para timestamptz ISO considerando o offset de São Paulo
-    // O fuso padrão de Brasília (America/Sao_Paulo) é UTC-03:00 (sem horário de verão atual)
+    // Converte YYYY-MM-DD e HH:MM para timestamptz ISO considerando offset de Brasília (UTC-03:00)
     return `${dateStr}T${timeStr}:00-03:00`;
   }
 
@@ -165,6 +167,20 @@
       state.lastActiveTrigger = document.activeElement;
     }
 
+    // Fecha o menu mobile se estiver aberto no celular
+    const mobilePanel = document.getElementById('mobileNavPanel');
+    const mobileOverlay = document.getElementById('mobileNavOverlay');
+    const mobileToggle = document.getElementById('mobileMenuToggle');
+    if (mobilePanel && mobilePanel.classList.contains('open')) {
+      mobilePanel.classList.remove('open');
+      if (mobileOverlay) mobileOverlay.classList.remove('open');
+      if (mobileToggle) {
+        mobileToggle.classList.remove('active');
+        mobileToggle.setAttribute('aria-expanded', 'false');
+      }
+      document.body.style.overflow = '';
+    }
+
     modal.removeAttribute('hidden');
     modal.hidden = false;
     modal.style.display = 'flex';
@@ -172,8 +188,13 @@
     modal.classList.add('active');
     document.body.classList.add('modal-open');
 
-    // Inicializa ou sincroniza a sessão
+    // Executa checagem de autenticação ao abrir
     checkAuthAndInit();
+
+    setTimeout(() => {
+      const closeBtn = document.getElementById('btnClosePrivateArea');
+      if (closeBtn) closeBtn.focus();
+    }, 60);
   }
 
   function closePrivateArea() {
@@ -187,8 +208,7 @@
     modal.style.display = 'none';
     document.body.classList.remove('modal-open');
 
-    // Desconecta canal realtime para economizar recursos enquanto fechado
-    unsubscribeRealtime();
+    closeBookingModal();
 
     if (state.lastActiveTrigger && typeof state.lastActiveTrigger.focus === 'function') {
       try {
@@ -197,32 +217,60 @@
     }
   }
 
+  function isModalOpen() {
+    const modal = document.getElementById('privateAreaModal');
+    return modal && modal.classList.contains('active');
+  }
+
   // --------------------------------------------------------------------------
-  // FLUXO DE AUTENTICAÇÃO E PERFIL
+  // NAVEGAÇÃO ENTRE PAINÉIS (LOGIN / ESQUECI SENHA / DASHBOARD / NÃO CONFIGURADO)
+  // --------------------------------------------------------------------------
+
+  function showPanel(panelId) {
+    const panels = ['panelUnavailable', 'panelLogin', 'panelForgotPassword', 'panelDashboard'];
+    panels.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.display = id === panelId ? 'block' : 'none';
+      }
+    });
+
+    // Se estiver no dashboard, renderiza dados do usuário
+    if (panelId === 'panelDashboard') {
+      renderUserProfile();
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // AUTENTICAÇÃO E PERFIL DO PROFISSIONAL
   // --------------------------------------------------------------------------
 
   async function checkAuthAndInit() {
-    const client = getSupabaseClient();
-    
-    // Se o Supabase ainda não está configurado com as chaves reais
-    if (!client) {
-      showPanel('panelConfigHelp');
+    const config = window.SUPABASE_CONFIG;
+    if (!config || !config.isConfigured()) {
+      showPanel('panelUnavailable');
       return;
     }
 
-    setLoading(true);
+    const client = getSupabaseClient();
+    if (!client) {
+      showPanel('panelUnavailable');
+      return;
+    }
+
+    setLoading(true, 'Verificando credenciais...');
+
     try {
       const { data: { session }, error } = await client.auth.getSession();
-      if (error || !session) {
-        state.session = null;
-        state.profile = null;
-        showPanel('panelLogin');
-      } else {
+      if (error) throw error;
+
+      if (session && session.user) {
         state.session = session;
         const valid = await fetchUserProfile(session.user.id);
         if (valid) {
           showPanel('panelDashboard');
           await loadSpaces();
+          await loadOperatingHours();
           await refreshSchedule();
           setupRealtime();
         } else {
@@ -231,11 +279,15 @@
           state.session = null;
           state.profile = null;
           showPanel('panelLogin');
-          showAuthError('Acesso restrito: seu cadastro de profissional precisa ser ativado pela administração do Espaço Ligia de Mayor.');
+          showAuthError('Seu perfil de profissional ainda não foi aprovado pela administração do Espaço Lígia de Mayor.');
         }
+      } else {
+        state.session = null;
+        state.profile = null;
+        showPanel('panelLogin');
       }
     } catch (err) {
-      console.error('[Espaço Ligia] Falha ao verificar autenticação:', err);
+      console.error('[Espaço Ligia] Erro ao verificar sessão:', err);
       showPanel('panelLogin');
     } finally {
       setLoading(false);
@@ -258,63 +310,88 @@
         return false;
       }
 
-      if (!data.is_active) {
-        console.warn('[Espaço Ligia] Profissional inativo no cadastro.');
-        return false;
-      }
-
       state.profile = data;
-      renderUserHeader();
-      return true;
+
+      // REQUISITO DE SEGURANÇA: Somente profissionais ativos podem usar o sistema
+      return data.is_active === true;
     } catch (err) {
-      console.error('[Espaço Ligia] Erro ao buscar perfil:', err);
+      console.error('[Espaço Ligia] Falha ao consultar perfil:', err);
       return false;
     }
   }
 
-  async function handleLogin(e) {
+  function renderUserProfile() {
+    const nameEl = document.getElementById('paUserName');
+    const roleBadge = document.getElementById('paUserRoleBadge');
+    const adminTabBtn = document.getElementById('tabBtnAdmin');
+
+    if (nameEl && state.profile) {
+      nameEl.textContent = state.profile.full_name || 'Profissional';
+    }
+
+    const isAdmin = state.profile && state.profile.role === 'admin';
+
+    if (roleBadge) {
+      if (isAdmin) {
+        roleBadge.textContent = 'Administrador';
+        roleBadge.className = 'pa-badge pa-badge-admin';
+      } else {
+        roleBadge.textContent = 'Profissional';
+        roleBadge.className = 'pa-badge pa-badge-professional';
+      }
+    }
+
+    if (adminTabBtn) {
+      adminTabBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // FORMULÁRIOS DE LOGIN E RECUPERAÇÃO DE SENHA
+  // --------------------------------------------------------------------------
+
+  async function handleLoginSubmit(e) {
     e.preventDefault();
-    const emailInput = document.getElementById('loginEmail');
-    const passwordInput = document.getElementById('loginPassword');
-    const errorEl = document.getElementById('loginErrorMsg');
+    clearAuthMessages();
 
-    if (errorEl) errorEl.style.display = 'none';
-
+    const emailInput = document.getElementById('paLoginEmail');
+    const passwordInput = document.getElementById('paLoginPassword');
     const email = emailInput ? emailInput.value.trim() : '';
     const password = passwordInput ? passwordInput.value : '';
 
     if (!email || !password) {
-      showAuthError('Por favor, preencha seu e-mail e senha cadastrados.');
+      showAuthError('Informe o seu e-mail e sua senha de acesso.');
       return;
     }
 
     const client = getSupabaseClient();
     if (!client) {
-      showPanel('panelConfigHelp');
+      showAuthError('Serviço de agendamento não configurado.');
       return;
     }
 
-    setLoading(true, 'Entrando na Área dos Profissionais...');
+    setLoading(true, 'Entrando na Área Privada...');
+
     try {
       const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) {
-        let msg = 'E-mail ou senha incorretos. Confira suas credenciais.';
-        if (error.message && error.message.includes('Invalid login credentials')) {
-          msg = 'Credenciais não encontradas ou senha incorreta. Contate a administração se ainda não tiver cadastro.';
-        } else if (error.message && error.message.includes('Email not confirmed')) {
-          msg = 'Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada.';
+        if (error.message.includes('Invalid login credentials')) {
+          showAuthError('E-mail ou senha incorretos. Verifique suas credenciais.');
+        } else {
+          showAuthError('Falha no login: ' + error.message);
         }
-        showAuthError(msg);
         return;
       }
 
       state.session = data.session;
       const valid = await fetchUserProfile(data.user.id);
+
       if (valid) {
         if (emailInput) emailInput.value = '';
         if (passwordInput) passwordInput.value = '';
         showPanel('panelDashboard');
         await loadSpaces();
+        await loadOperatingHours();
         await refreshSchedule();
         setupRealtime();
       } else {
@@ -323,7 +400,44 @@
       }
     } catch (err) {
       console.error('[Espaço Ligia] Erro no login:', err);
-      showAuthError('Ocorreu um erro ao conectar. Verifique sua conexão e tente novamente.');
+      showAuthError('Erro de conexão ao autenticar. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleForgotPasswordSubmit(e) {
+    e.preventDefault();
+    clearAuthMessages();
+
+    const emailInput = document.getElementById('paForgotEmail');
+    const email = emailInput ? emailInput.value.trim() : '';
+
+    if (!email) {
+      showForgotError('Informe o e-mail cadastrado na clínica.');
+      return;
+    }
+
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    setLoading(true, 'Enviando link de recuperação...');
+
+    try {
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin
+      });
+
+      if (error) {
+        showForgotError('Erro ao solicitar redefinição: ' + error.message);
+        return;
+      }
+
+      showForgotSuccess('Link de recuperação enviado com sucesso para seu e-mail. Verifique sua caixa de entrada.');
+      if (emailInput) emailInput.value = '';
+    } catch (err) {
+      console.error('[Espaço Ligia] Erro na recuperação de senha:', err);
+      showForgotError('Erro de conexão ao processar solicitação.');
     } finally {
       setLoading(false);
     }
@@ -331,70 +445,64 @@
 
   async function handleLogout() {
     const client = getSupabaseClient();
-    if (client) {
-      await client.auth.signOut();
-    }
-    unsubscribeRealtime();
-    state.session = null;
-    state.profile = null;
-    state.spaces = [];
-    state.availabilitySlots = [];
-    state.myReservations = [];
-    showPanel('panelLogin');
-  }
+    setLoading(true, 'Saindo da Área Privada...');
 
-  async function handleForgotPassword(e) {
-    e.preventDefault();
-    const emailInput = document.getElementById('resetEmailInput');
-    const msgEl = document.getElementById('resetMsg');
-    const email = emailInput ? emailInput.value.trim() : '';
-
-    if (!email) {
-      if (msgEl) {
-        msgEl.className = 'pa-alert pa-alert-error';
-        msgEl.textContent = 'Informe seu e-mail cadastrado.';
-        msgEl.style.display = 'block';
-      }
-      return;
-    }
-
-    const client = getSupabaseClient();
-    if (!client) return;
-
-    setLoading(true, 'Enviando instruções de recuperação...');
     try {
-      const { error } = await client.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + window.location.pathname
-      });
-
-      if (msgEl) {
-        msgEl.style.display = 'block';
-        if (error) {
-          msgEl.className = 'pa-alert pa-alert-error';
-          msgEl.textContent = 'Não foi possível enviar o e-mail: ' + (error.message || 'tente novamente.');
-        } else {
-          msgEl.className = 'pa-alert pa-alert-success';
-          msgEl.textContent = 'Se o e-mail estiver cadastrado, você receberá um link seguro para redefinir sua senha em instantes.';
-          if (emailInput) emailInput.value = '';
-        }
+      if (client) {
+        await client.auth.signOut();
       }
-    } catch (err) {
-      console.error('[Espaço Ligia] Erro no reset de senha:', err);
+    } catch (e) {
     } finally {
+      unsubscribeRealtime();
+      state.session = null;
+      state.profile = null;
+      state.spaces = [];
+      state.availabilitySlots = [];
+      state.myReservations = [];
       setLoading(false);
+      showPanel('panelLogin');
     }
   }
 
   function showAuthError(msg) {
-    const errorEl = document.getElementById('loginErrorMsg');
-    if (errorEl) {
-      errorEl.textContent = msg;
-      errorEl.style.display = 'block';
+    const el = document.getElementById('loginErrorMessage');
+    if (el) {
+      el.textContent = msg;
+      el.style.display = 'block';
     }
   }
 
+  function showForgotError(msg) {
+    const err = document.getElementById('forgotErrorMessage');
+    const succ = document.getElementById('forgotSuccessMessage');
+    if (err) {
+      err.textContent = msg;
+      err.style.display = 'block';
+    }
+    if (succ) succ.style.display = 'none';
+  }
+
+  function showForgotSuccess(msg) {
+    const err = document.getElementById('forgotErrorMessage');
+    const succ = document.getElementById('forgotSuccessMessage');
+    if (succ) {
+      succ.textContent = msg;
+      succ.style.display = 'block';
+    }
+    if (err) err.style.display = 'none';
+  }
+
+  function clearAuthMessages() {
+    const lErr = document.getElementById('loginErrorMessage');
+    const fErr = document.getElementById('forgotErrorMessage');
+    const fSucc = document.getElementById('forgotSuccessMessage');
+    if (lErr) lErr.style.display = 'none';
+    if (fErr) fErr.style.display = 'none';
+    if (fSucc) fSucc.style.display = 'none';
+  }
+
   // --------------------------------------------------------------------------
-  // CARREGAMENTO DE ESPAÇOS E DISPONIBILIDADE
+  // CARREGAMENTO DE ESPAÇOS E HORÁRIOS DE FUNCIONAMENTO
   // --------------------------------------------------------------------------
 
   async function loadSpaces() {
@@ -414,64 +522,176 @@
       }
 
       state.spaces = data || [];
-      if (state.spaces.length > 0 && !state.selectedSpaceId) {
-        state.selectedSpaceId = state.spaces[0].id;
+
+      // Seleciona a Sala de Pilates por padrão, se disponível
+      if (state.spaces.length > 0) {
+        const pilates = state.spaces.find(s => s.name.toLowerCase().includes('pilates'));
+        state.selectedSpaceId = pilates ? pilates.id : state.spaces[0].id;
       }
 
       renderSpacesSelector();
+      populateSpaceSelects();
     } catch (err) {
-      console.error('[Espaço Ligia] Falha ao carregar espaços:', err);
+      console.error('[Espaço Ligia] Falha ao carregar salas:', err);
     }
   }
 
-  async function refreshSchedule() {
-    if (!state.selectedSpaceId || !state.selectedDate) return;
+  async function loadOperatingHours() {
     const client = getSupabaseClient();
     if (!client) return;
 
-    const opHours = getOperatingHoursForDate(state.selectedDate);
-    const container = document.getElementById('scheduleSlotsContainer');
-    const headerInfo = document.getElementById('scheduleDateHeaderInfo');
+    try {
+      const { data, error } = await client
+        .from('operating_hours')
+        .select('*')
+        .order('day_of_week', { ascending: true });
 
-    if (headerInfo) {
-      headerInfo.textContent = formatDateFriendly(state.selectedDate);
-    }
-
-    const operatingBadge = document.getElementById('operatingHoursBadge');
-    if (operatingBadge) {
-      operatingBadge.textContent = opHours.label;
-      operatingBadge.className = opHours.isOpen ? 'pa-badge pa-badge-teal' : 'pa-badge pa-badge-closed';
-    }
-
-    if (!opHours.isOpen) {
-      if (container) {
-        container.innerHTML = `
-          <div class="pa-empty-state">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-            </svg>
-            <h4>Espaço fechado aos domingos</h4>
-            <p>O Espaço Ligia de Mayor não realiza atendimentos nem locações aos domingos. Selecione outro dia.</p>
-          </div>
-        `;
+      if (!error && data) {
+        state.operatingHours = data;
       }
+    } catch (err) {
+      console.error('[Espaço Ligia] Erro ao carregar horários de funcionamento:', err);
+    }
+  }
+
+  function renderSpacesSelector() {
+    const container = document.getElementById('spacesPillsContainer');
+    if (!container) return;
+
+    container.innerHTML = '';
+    state.spaces.forEach(space => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `pa-space-pill ${space.id === state.selectedSpaceId ? 'active' : ''}`;
+      btn.setAttribute('data-id', space.id);
+      btn.innerHTML = `
+        <span class="pa-space-pill-title">${escapeHtml(space.name)}</span>
+        ${space.description ? `<span class="pa-space-pill-desc">${escapeHtml(space.description)}</span>` : ''}
+      `;
+      btn.addEventListener('click', () => {
+        if (state.selectedSpaceId !== space.id) {
+          state.selectedSpaceId = space.id;
+          renderSpacesSelector();
+          refreshSchedule();
+        }
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  function populateSpaceSelects() {
+    const selects = ['bookingSpaceSelect', 'adminBlockSpace', 'adminHoursSpaceSelect'];
+    selects.forEach(selectId => {
+      const sel = document.getElementById(selectId);
+      if (!sel) return;
+      sel.innerHTML = '';
+      state.spaces.forEach(sp => {
+        const opt = document.createElement('option');
+        opt.value = sp.id;
+        opt.textContent = sp.name;
+        sel.appendChild(opt);
+      });
+      if (state.selectedSpaceId) {
+        sel.value = state.selectedSpaceId;
+      }
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // CONTROLE DE DATA E DISPONIBILIDADE (AMERICA/SAO_PAULO)
+  // --------------------------------------------------------------------------
+
+  function initDateControls() {
+    const dateInput = document.getElementById('scheduleDateInput');
+    const btnPrev = document.getElementById('btnPrevDay');
+    const btnNext = document.getElementById('btnNextDay');
+    const btnToday = document.getElementById('btnToday');
+
+    if (dateInput) {
+      dateInput.value = state.selectedDate;
+      dateInput.min = getTodayDateStringSP();
+      dateInput.addEventListener('change', (e) => {
+        if (e.target.value) {
+          state.selectedDate = e.target.value;
+          refreshSchedule();
+        }
+      });
+    }
+
+    if (btnPrev) {
+      btnPrev.addEventListener('click', () => {
+        changeDateByDays(-1);
+      });
+    }
+
+    if (btnNext) {
+      btnNext.addEventListener('click', () => {
+        changeDateByDays(1);
+      });
+    }
+
+    if (btnToday) {
+      btnToday.addEventListener('click', () => {
+        state.selectedDate = getTodayDateStringSP();
+        if (dateInput) dateInput.value = state.selectedDate;
+        refreshSchedule();
+      });
+    }
+  }
+
+  function changeDateByDays(delta) {
+    const [y, m, d] = state.selectedDate.split('-').map(Number);
+    const date = new Date(y, m - 1, d, 12, 0, 0);
+    date.setDate(date.getDate() + delta);
+
+    const newY = date.getFullYear();
+    const newM = String(date.getMonth() + 1).padStart(2, '0');
+    const newD = String(date.getDate()).padStart(2, '0');
+    const newDateStr = `${newY}-${newM}-${newD}`;
+
+    const todayStr = getTodayDateStringSP();
+    if (newDateStr < todayStr && delta < 0) {
+      showToast('Não é permitido agendar em datas passadas.');
       return;
     }
 
-    if (container) {
+    state.selectedDate = newDateStr;
+    const dateInput = document.getElementById('scheduleDateInput');
+    if (dateInput) dateInput.value = newDateStr;
+    refreshSchedule();
+  }
+
+  async function refreshSchedule(isSilent = false) {
+    if (!state.selectedSpaceId) return;
+
+    const dateHeader = document.getElementById('scheduleDateHeaderInfo');
+    const hoursBadge = document.getElementById('operatingHoursBadge');
+    const container = document.getElementById('scheduleSlotsContainer');
+
+    if (dateHeader) {
+      dateHeader.textContent = formatDateFriendly(state.selectedDate);
+    }
+
+    const opHours = getOperatingHoursForDate(state.selectedDate, state.selectedSpaceId);
+    if (hoursBadge) {
+      hoursBadge.textContent = opHours.label;
+      hoursBadge.className = opHours.isOpen ? 'pa-badge pa-badge-teal' : 'pa-badge pa-badge-closed';
+    }
+
+    if (!isSilent && container) {
       container.innerHTML = `
         <div class="pa-loading-indicator">
           <div class="pa-spinner"></div>
-          <span>Consultando disponibilidade com segurança...</span>
+          <span>Consultando disponibilidade...</span>
         </div>
       `;
     }
 
+    const client = getSupabaseClient();
+    if (!client) return;
+
     try {
-      // Chama a função SQL get_space_availability(p_space_id, p_date)
-      // Esta função é uma SECURITY DEFINER que mascara horários ocupados como "busy"
-      // sem jamais vazar quem reservou ou detalhes de pacientes
+      // Chama a RPC get_space_availability (Segurança rigorosa: dados anônimos de colegas)
       const { data, error } = await client.rpc('get_space_availability', {
         p_space_id: state.selectedSpaceId,
         p_date: state.selectedDate
@@ -511,13 +731,23 @@
     const container = document.getElementById('scheduleSlotsContainer');
     if (!container) return;
 
-    const opHours = getOperatingHoursForDate(state.selectedDate);
-    if (!opHours.isOpen) return;
-
     const currentSpace = state.spaces.find(s => s.id === state.selectedSpaceId);
     const spaceName = currentSpace ? currentSpace.name : 'Espaço selecionado';
+    const opHours = getOperatingHoursForDate(state.selectedDate, state.selectedSpaceId);
 
-    // Monta a grade contínua de horários do dia de 1 em 1 hora (07h às 21h ou 14h)
+    // Se o espaço estiver fechado neste dia
+    if (!opHours.isOpen) {
+      container.innerHTML = `
+        <div class="pa-empty-state">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔒</div>
+          <h4>${escapeHtml(spaceName)}: Fechado</h4>
+          <p>${escapeHtml(opHours.label)} para agendamentos em ${formatDateFriendly(state.selectedDate)}.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Monta a grade contínua de horários do dia de 1 em 1 hora respeitando abertura e fechamento
     const slots = [];
     for (let h = opHours.startHour; h < opHours.endHour; h++) {
       const startH = String(h).padStart(2, '0') + ':00';
@@ -531,7 +761,7 @@
         const slotEnd = new Date(slot.end_time).getTime();
         const myStart = new Date(startIso).getTime();
         const myEnd = new Date(endIso).getTime();
-        // Sobreposição de intervalos [start, end)
+        // Sobreposição estrita [start, end)
         return slotStart < myEnd && slotEnd > myStart;
       });
 
@@ -567,7 +797,7 @@
     if (slots.length === 0) {
       container.innerHTML = `
         <div class="pa-empty-state">
-          <p>Nenhum horário configurado para este dia.</p>
+          <p>Nenhum horário disponível para este dia.</p>
         </div>
       `;
       return;
@@ -602,28 +832,25 @@
       } else if (slot.status === 'mine') {
         statusBadge = `<span class="pa-slot-badge pa-slot-mine">Sua Reserva</span>`;
         actionBtn = `
-          <button type="button" class="pa-btn pa-btn-sm pa-btn-cancel-quick" data-time="${slot.startH}">
-            Sua Reserva
+          <button type="button" class="pa-btn pa-btn-sm pa-btn-outline btn-go-my-reservations">
+            Minhas Reservas
           </button>
         `;
       } else if (slot.status === 'busy') {
-        // SEGURANÇA E PRIVACIDADE: Mostra estritamente como "Indisponível",
-        // sem expor dados pessoais de colegas ou pacientes
         statusBadge = `<span class="pa-slot-badge pa-slot-busy">Indisponível</span>`;
-        actionBtn = `<span class="pa-slot-na">Ocupado</span>`;
+        actionBtn = `<button type="button" class="pa-btn pa-btn-sm pa-btn-disabled" disabled>Ocupado</button>`;
       } else if (slot.status === 'blocked') {
-        statusBadge = `<span class="pa-slot-badge pa-slot-blocked">Bloqueado</span>`;
-        actionBtn = `<span class="pa-slot-na">Manutenção</span>`;
+        statusBadge = `<span class="pa-slot-badge pa-slot-blocked">Indisponível</span>`;
+        actionBtn = `<button type="button" class="pa-btn pa-btn-sm pa-btn-disabled" disabled>Bloqueado</button>`;
       } else if (slot.status === 'past') {
         statusBadge = `<span class="pa-slot-badge pa-slot-past">Encerrado</span>`;
-        actionBtn = `<span class="pa-slot-na">-</span>`;
+        actionBtn = `<button type="button" class="pa-btn pa-btn-sm pa-btn-disabled" disabled>Encerrado</button>`;
       }
 
       html += `
-        <div class="pa-slot-card pa-slot-status-${slot.status}">
+        <div class="pa-slot-card ${slot.status}">
           <div class="pa-slot-time-col">
-            <span class="pa-slot-hours">${slot.startH} - ${slot.endH}</span>
-            <span class="pa-slot-duration">1 hora</span>
+            <span class="pa-slot-hours">${slot.startH} às ${slot.endH}</span>
           </div>
           <div class="pa-slot-status-col">
             ${statusBadge}
@@ -635,40 +862,20 @@
       `;
     });
 
-    html += `
-      </div>
-      <div class="pa-custom-booking-cta">
-        <button type="button" class="pa-btn pa-btn-secondary" id="btnOpenCustomBooking">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-          <span>Reservar Horário com Duração Personalizada</span>
-        </button>
-      </div>
-    `;
-
+    html += `</div>`;
     container.innerHTML = html;
 
-    // Conecta botões de reserva rápida
+    // Conecta botões "Reservar"
     container.querySelectorAll('.pa-btn-reserve').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const start = btn.getAttribute('data-start');
-        const end = btn.getAttribute('data-end');
-        openBookingModal(start, end);
+      btn.addEventListener('click', (e) => {
+        const startH = e.currentTarget.getAttribute('data-start');
+        const endH = e.currentTarget.getAttribute('data-end');
+        openBookingModal(startH, endH);
       });
     });
 
-    // Conecta botão de duração personalizada
-    const customBtn = container.querySelector('#btnOpenCustomBooking');
-    if (customBtn) {
-      customBtn.addEventListener('click', () => {
-        openBookingModal();
-      });
-    }
-
-    // Botões que levam à aba Minhas Reservas
-    container.querySelectorAll('.pa-btn-cancel-quick').forEach(btn => {
+    // Conecta botões "Minhas Reservas"
+    container.querySelectorAll('.btn-go-my-reservations').forEach(btn => {
       btn.addEventListener('click', () => {
         switchTab('my_reservations');
       });
@@ -676,30 +883,23 @@
   }
 
   // --------------------------------------------------------------------------
-  // CRIAÇÃO DE RESERVA COM PROTEÇÃO ATÔMICA POSTGRESQL CONTRA CONFLITOS
+  // MODAL / DRAWER DE CRIAÇÃO DE RESERVA
   // --------------------------------------------------------------------------
 
-  function openBookingModal(defaultStart = '', defaultEnd = '') {
-    const modal = document.getElementById('bookingModalDrawer');
-    if (!modal) return;
-
+  function openBookingModal(defaultStart = '07:00', defaultEnd = '08:00') {
+    const drawer = document.getElementById('bookingModalDrawer');
     const spaceSelect = document.getElementById('bookingSpaceSelect');
     const dateInput = document.getElementById('bookingDateInput');
-    const startSelect = document.getElementById('bookingStartTime');
-    const endSelect = document.getElementById('bookingEndTime');
-    const notesInput = document.getElementById('bookingNotes');
-    const errorAlert = document.getElementById('bookingErrorAlert');
+    const startSelect = document.getElementById('bookingStartTimeSelect');
+    const endSelect = document.getElementById('bookingEndTimeSelect');
+    const notesInput = document.getElementById('bookingNotesInput');
+    const errorEl = document.getElementById('bookingFormError');
 
-    if (errorAlert) {
-      errorAlert.style.display = 'none';
-      errorAlert.textContent = '';
-    }
+    if (!drawer) return;
+    if (errorEl) errorEl.style.display = 'none';
 
-    // Preenche espaços no select
-    if (spaceSelect) {
-      spaceSelect.innerHTML = state.spaces.map(s => 
-        `<option value="${s.id}" ${s.id === state.selectedSpaceId ? 'selected' : ''}>${escapeHtml(s.name)}</option>`
-      ).join('');
+    if (spaceSelect && state.selectedSpaceId) {
+      spaceSelect.value = state.selectedSpaceId;
     }
 
     if (dateInput) {
@@ -707,70 +907,94 @@
       dateInput.min = getTodayDateStringSP();
     }
 
-    // Popula horários possíveis (07:00 às 21:00 em intervalos de 30min)
     populateTimeOptions(startSelect, endSelect, defaultStart, defaultEnd);
 
     if (notesInput) {
       notesInput.value = '';
     }
 
-    modal.removeAttribute('hidden');
-    modal.hidden = false;
-    modal.style.display = 'flex';
-    modal.classList.add('active');
+    drawer.removeAttribute('hidden');
+    drawer.hidden = false;
+    drawer.style.display = 'flex';
+
+    setTimeout(() => {
+      if (notesInput) notesInput.focus();
+    }, 60);
   }
 
   function closeBookingModal() {
-    const modal = document.getElementById('bookingModalDrawer');
-    if (!modal) return;
-    modal.classList.remove('active');
-    modal.setAttribute('hidden', '');
-    modal.hidden = true;
-    modal.style.display = 'none';
+    const drawer = document.getElementById('bookingModalDrawer');
+    if (!drawer) return;
+    drawer.setAttribute('hidden', '');
+    drawer.hidden = true;
+    drawer.style.display = 'none';
   }
 
-  function populateTimeOptions(startEl, endEl, defStart = '', defEnd = '') {
-    if (!startEl || !endEl) return;
+  function populateTimeOptions(startSelect, endSelect, selectedStart = '07:00', selectedEnd = '08:00') {
+    if (!startSelect || !endSelect) return;
+    const opHours = getOperatingHoursForDate(state.selectedDate, state.selectedSpaceId);
+    const startH = opHours.isOpen ? opHours.startHour : 7;
+    const endH = opHours.isOpen ? opHours.endHour : 21;
 
-    const op = getOperatingHoursForDate(state.selectedDate);
-    const times = [];
-    for (let h = op.startHour; h <= op.endHour; h++) {
-      times.push(String(h).padStart(2, '0') + ':00');
-      if (h < op.endHour) {
-        times.push(String(h).padStart(2, '0') + ':30');
+    startSelect.innerHTML = '';
+    endSelect.innerHTML = '';
+
+    for (let h = startH; h < endH; h++) {
+      const timeStr00 = String(h).padStart(2, '0') + ':00';
+      const timeStr30 = String(h).padStart(2, '0') + ':30';
+      startSelect.add(new Option(timeStr00, timeStr00));
+      startSelect.add(new Option(timeStr30, timeStr30));
+    }
+
+    for (let h = startH; h <= endH; h++) {
+      const timeStr00 = String(h).padStart(2, '0') + ':00';
+      const timeStr30 = String(h).padStart(2, '0') + ':30';
+      if (h > startH || timeStr00 > selectedStart) {
+        endSelect.add(new Option(timeStr00, timeStr00));
+      }
+      if (h < endH) {
+        endSelect.add(new Option(timeStr30, timeStr30));
       }
     }
 
-    startEl.innerHTML = times.slice(0, -1).map(t => 
-      `<option value="${t}" ${t === defStart ? 'selected' : ''}>${t}</option>`
-    ).join('');
+    startSelect.value = selectedStart;
+    endSelect.value = selectedEnd;
 
-    endEl.innerHTML = times.slice(1).map(t => 
-      `<option value="${t}" ${t === defEnd ? 'selected' : ''}>${t}</option>`
-    ).join('');
+    // Atualiza opções de término ao mudar início
+    startSelect.onchange = () => {
+      const currentStart = startSelect.value;
+      const currentEnd = endSelect.value;
+      endSelect.innerHTML = '';
 
-    // Se defEnd não fornecido, define 1h após o início
-    if (!defEnd && defStart) {
-      const idx = times.indexOf(defStart);
-      if (idx !== -1 && idx + 2 < times.length) {
-        endEl.value = times[idx + 2];
+      for (let h = startH; h <= endH; h++) {
+        const timeStr00 = String(h).padStart(2, '0') + ':00';
+        const timeStr30 = String(h).padStart(2, '0') + ':30';
+        if (timeStr00 > currentStart) {
+          endSelect.add(new Option(timeStr00, timeStr00));
+        }
+        if (h < endH && timeStr30 > currentStart) {
+          endSelect.add(new Option(timeStr30, timeStr30));
+        }
       }
-    }
+
+      if (currentEnd > currentStart) {
+        endSelect.value = currentEnd;
+      } else if (endSelect.options.length > 0) {
+        endSelect.selectedIndex = 0;
+      }
+    };
   }
 
   async function handleConfirmBooking(e) {
     e.preventDefault();
     const spaceId = document.getElementById('bookingSpaceSelect')?.value;
     const dateStr = document.getElementById('bookingDateInput')?.value;
-    const startTimeStr = document.getElementById('bookingStartTime')?.value;
-    const endTimeStr = document.getElementById('bookingEndTime')?.value;
-    const notes = document.getElementById('bookingNotes')?.value.trim();
-    const errorAlert = document.getElementById('bookingErrorAlert');
-
-    if (errorAlert) errorAlert.style.display = 'none';
+    const startTimeStr = document.getElementById('bookingStartTimeSelect')?.value;
+    const endTimeStr = document.getElementById('bookingEndTimeSelect')?.value;
+    const notes = document.getElementById('bookingNotesInput')?.value.trim();
 
     if (!spaceId || !dateStr || !startTimeStr || !endTimeStr) {
-      showBookingError('Por favor, informe o espaço, a data e os horários de início e término.');
+      showBookingError('Preencha todos os campos obrigatórios da reserva.');
       return;
     }
 
@@ -782,13 +1006,19 @@
     const startIso = buildIsoStringSP(dateStr, startTimeStr);
     const endIso = buildIsoStringSP(dateStr, endTimeStr);
 
-    const client = getSupabaseClient();
-    if (!client || !state.session) {
-      showBookingError('Sessão expirada. Faça login novamente.');
+    if (new Date(endIso) <= new Date()) {
+      showBookingError('Não é permitido criar reservas para horários passados.');
       return;
     }
 
-    setLoading(true, 'Confirmando reserva com proteção atômica...');
+    const client = getSupabaseClient();
+    if (!client) {
+      showBookingError('Serviço de agendamento não configurado.');
+      return;
+    }
+
+    setLoading(true, 'Confirmando reserva no banco de dados...');
+
     try {
       const { data, error } = await client
         .from('reservations')
@@ -797,79 +1027,79 @@
           professional_id: state.session.user.id,
           start_time: startIso,
           end_time: endIso,
-          notes: notes || null,
-          status: 'confirmed'
+          status: 'confirmed',
+          notes: notes || null
         })
         .select()
         .single();
 
       if (error) {
         console.error('[Espaço Ligia] Erro ao criar reserva:', error);
-        
-        // MENSAGEM OBRIGATÓRIA DA ESPECIFICAÇÃO PARA CONFLITOS DE CONCORRÊNCIA:
-        // "Este horário acabou de ser reservado. Escolha outro horário."
-        const isConflict = 
-          error.code === '23P01' || // exclusion_violation
-          error.code === '23505' || // unique_violation
+
+        // Tratamento estrito do erro de concorrência / colisão
+        if (
+          error.code === '23P01' ||
           (error.message && (
             error.message.includes('no_overlapping_reservations') ||
-            error.message.includes('conflicts with existing') ||
-            error.message.includes('bloqueio administrativo') ||
-            error.message.includes('sobreposição')
-          ));
-
-        if (isConflict) {
+            error.message.includes('sobreposição') ||
+            error.message.includes('bloqueio') ||
+            error.message.includes('conflito')
+          ))
+        ) {
           showBookingError('Este horário acabou de ser reservado. Escolha outro horário.');
-        } else if (error.message && error.message.includes('domingos')) {
-          showBookingError('O Espaço Ligia de Mayor não funciona aos domingos.');
-        } else if (error.message && error.message.includes('sábados')) {
-          showBookingError('Aos sábados, o horário de funcionamento é das 07:00 às 14:00.');
-        } else if (error.message && error.message.includes('horários passados')) {
+        } else if (error.message && error.message.includes('passados')) {
           showBookingError('Não é permitido criar reservas para horários passados.');
+        } else if (error.message && error.message.includes('fechado')) {
+          showBookingError('O espaço está fechado nesta data conforme configuração de horários.');
+        } else if (error.message && error.message.includes('funcionamento')) {
+          showBookingError('A reserva deve respeitar o horário de funcionamento do espaço.');
+        } else if (error.message && error.message.includes('inativo')) {
+          showBookingError('Acesso não autorizado: seu cadastro está inativo.');
         } else {
-          showBookingError('Não foi possível confirmar: ' + (error.message || 'tente novamente.'));
+          showBookingError('Erro ao confirmar reserva: ' + error.message);
         }
         return;
       }
 
-      // Sucesso na reserva
-      closeBookingModal();
       showToast('Reserva confirmada com sucesso!');
+      closeBookingModal();
       await refreshSchedule();
-      await loadMyReservations();
+      if (state.currentTab === 'my_reservations') {
+        await loadMyReservations();
+      }
     } catch (err) {
-      console.error('[Espaço Ligia] Exceção ao reservar:', err);
-      showBookingError('Erro de conexão ao confirmar. Tente novamente.');
+      console.error('[Espaço Ligia] Erro inesperado na reserva:', err);
+      showBookingError('Erro de conexão. Verifique sua internet e tente novamente.');
     } finally {
       setLoading(false);
     }
   }
 
   function showBookingError(msg) {
-    const errorAlert = document.getElementById('bookingErrorAlert');
-    if (errorAlert) {
-      errorAlert.textContent = msg;
-      errorAlert.style.display = 'block';
+    const errorEl = document.getElementById('bookingFormError');
+    if (errorEl) {
+      errorEl.textContent = msg;
+      errorEl.style.display = 'block';
     }
   }
 
   // --------------------------------------------------------------------------
-  // MINHAS RESERVAS E CANCELAMENTO
+  // ABA: MINHAS RESERVAS E CANCELAMENTO ATÔMICO
   // --------------------------------------------------------------------------
 
   async function loadMyReservations() {
-    const client = getSupabaseClient();
-    if (!client || !state.session) return;
+    const container = document.getElementById('myReservationsList');
+    if (!container) return;
 
-    const listEl = document.getElementById('myReservationsList');
-    if (listEl) {
-      listEl.innerHTML = `
-        <div class="pa-loading-indicator">
-          <div class="pa-spinner"></div>
-          <span>Carregando suas reservas...</span>
-        </div>
-      `;
-    }
+    container.innerHTML = `
+      <div class="pa-loading-indicator">
+        <div class="pa-spinner"></div>
+        <span>Carregando suas reservas...</span>
+      </div>
+    `;
+
+    const client = getSupabaseClient();
+    if (!client) return;
 
     try {
       const { data, error } = await client
@@ -881,326 +1111,372 @@
           end_time,
           status,
           notes,
-          created_at,
-          spaces (name)
+          spaces ( name )
         `)
         .eq('professional_id', state.session.user.id)
         .order('start_time', { ascending: false });
 
       if (error) {
-        console.error('[Espaço Ligia] Erro ao buscar reservas do profissional:', error);
-        if (listEl) {
-          listEl.innerHTML = `<div class="pa-alert pa-alert-error">Erro ao carregar reservas: ${error.message}</div>`;
-        }
+        container.innerHTML = `
+          <div class="pa-alert pa-alert-error">
+            Erro ao listar reservas: ${error.message}
+          </div>
+        `;
         return;
       }
 
       state.myReservations = data || [];
       renderMyReservations();
     } catch (err) {
-      console.error('[Espaço Ligia] Falha ao listar reservas:', err);
+      console.error('[Espaço Ligia] Erro ao carregar minhas reservas:', err);
+      container.innerHTML = `
+        <div class="pa-alert pa-alert-error">
+          Erro de conexão ao carregar reservas.
+        </div>
+      `;
     }
   }
 
   function renderMyReservations() {
-    const listEl = document.getElementById('myReservationsList');
-    if (!listEl) return;
+    const container = document.getElementById('myReservationsList');
+    if (!container) return;
 
     if (state.myReservations.length === 0) {
-      listEl.innerHTML = `
+      container.innerHTML = `
         <div class="pa-empty-state">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-            <line x1="16" y1="2" x2="16" y2="6"></line>
-            <line x1="8" y1="2" x2="8" y2="6"></line>
-            <line x1="3" y1="10" x2="21" y2="10"></line>
-          </svg>
-          <h4>Nenhuma reserva encontrada</h4>
-          <p>Você ainda não realizou agendamentos de espaços. Use a aba "Agenda" para reservar um horário.</p>
+          <p>Você ainda não possui reservas registradas.</p>
         </div>
       `;
       return;
     }
 
+    let html = `<div class="pa-reservations-cards-list">`;
     const now = new Date();
-    let html = '<div class="pa-reservations-cards-col">';
 
-    state.myReservations.forEach(r => {
-      const startD = new Date(r.start_time);
-      const isPast = startD < now;
-      const isConfirmed = r.status === 'confirmed';
-      const spaceName = r.spaces ? r.spaces.name : 'Espaço';
-      const dateFormatted = new Intl.DateTimeFormat('pt-BR', {
-        timeZone: TIMEZONE,
-        weekday: 'short',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      }).format(startD);
+    state.myReservations.forEach(res => {
+      const startDate = new Date(res.start_time);
+      const isPast = startDate < now;
+      const isCancelled = res.status === 'cancelled';
+      const spaceName = res.spaces?.name || 'Espaço';
 
-      const startH = formatTimeSP(r.start_time);
-      const endH = formatTimeSP(r.end_time);
+      const dateStr = formatDateFromIsoSP(res.start_time);
+      const timeStr = formatTimeRangeSP(res.start_time, res.end_time);
 
       let statusBadge = '';
-      if (!isConfirmed) {
+      if (isCancelled) {
         statusBadge = `<span class="pa-badge pa-badge-cancelled">Cancelada</span>`;
       } else if (isPast) {
-        statusBadge = `<span class="pa-badge pa-badge-past">Concluída</span>`;
+        statusBadge = `<span class="pa-badge pa-badge-past">Realizada</span>`;
       } else {
-        statusBadge = `<span class="pa-badge pa-badge-confirmed">Confirmada</span>`;
+        statusBadge = `<span class="pa-badge pa-badge-teal">Confirmada</span>`;
       }
 
-      let cancelAction = '';
-      if (isConfirmed && !isPast) {
-        cancelAction = `
-          <button type="button" class="pa-btn pa-btn-danger-outline pa-btn-sm btn-cancel-res" data-id="${r.id}">
-            Cancelar Reserva
-          </button>
-        `;
-      }
+      const canCancel = !isCancelled && !isPast;
 
       html += `
-        <div class="pa-reservation-card ${!isConfirmed ? 'pa-res-cancelled' : ''}">
-          <div class="pa-res-top-row">
-            <span class="pa-res-space">${escapeHtml(spaceName)}</span>
+        <div class="pa-res-card ${isCancelled ? 'cancelled' : ''}">
+          <div class="pa-res-card-header">
+            <div>
+              <span class="pa-res-space-name">${escapeHtml(spaceName)}</span>
+              <div class="pa-res-datetime">
+                <strong>${dateStr}</strong> · ${timeStr}
+              </div>
+            </div>
             ${statusBadge}
           </div>
-          <div class="pa-res-datetime">
-            <span class="pa-res-date">${dateFormatted}</span>
-            <span class="pa-res-time">${startH} às ${endH}</span>
-          </div>
-          ${r.notes ? `<div class="pa-res-notes">Obs: ${escapeHtml(r.notes)}</div>` : ''}
-          <div class="pa-res-footer">
-            ${cancelAction}
+
+          ${res.notes ? `<div class="pa-res-notes">Obs: ${escapeHtml(res.notes)}</div>` : ''}
+
+          <div class="pa-res-card-actions">
+            ${canCancel ? `
+              <button type="button" class="pa-btn pa-btn-outline pa-btn-sm btn-cancel-res" data-id="${res.id}">
+                Cancelar Reserva
+              </button>
+            ` : ''}
           </div>
         </div>
       `;
     });
 
-    html += '</div>';
-    listEl.innerHTML = html;
+    html += `</div>`;
+    container.innerHTML = html;
 
-    // Listeners nos botões de cancelamento
-    listEl.querySelectorAll('.btn-cancel-res').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const resId = btn.getAttribute('data-id');
-        await promptCancelReservation(resId);
+    container.querySelectorAll('.btn-cancel-res').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const resId = e.currentTarget.getAttribute('data-id');
+        handleCancelReservation(resId);
       });
     });
   }
 
-  async function promptCancelReservation(reservationId) {
-    const ok = window.confirm('Deseja realmente cancelar esta reserva? O horário será liberado imediatamente para outros colegas.');
-    if (!ok) return;
+  async function handleCancelReservation(reservationId) {
+    if (!confirm('Deseja realmente cancelar esta reserva? O horário será liberado imediatamente para outros profissionais.')) {
+      return;
+    }
 
     const client = getSupabaseClient();
     if (!client) return;
 
-    setLoading(true, 'Cancelando reserva...');
+    setLoading(true, 'Cancelando reserva no banco de dados...');
+
     try {
+      // Atualiza apenas o status para 'cancelled' (respeitando o trigger do Postgres)
       const { error } = await client
         .from('reservations')
         .update({ status: 'cancelled' })
         .eq('id', reservationId);
 
       if (error) {
-        alert('Não foi possível cancelar: ' + error.message);
+        alert('Erro ao cancelar reserva: ' + error.message);
         return;
       }
 
-      showToast('Reserva cancelada com sucesso!');
+      showToast('Reserva cancelada com sucesso! O horário foi liberado.');
       await loadMyReservations();
       await refreshSchedule();
     } catch (err) {
-      console.error('[Espaço Ligia] Falha ao cancelar reserva:', err);
+      console.error('[Espaço Ligia] Erro no cancelamento:', err);
+      alert('Erro inesperado ao cancelar reserva.');
     } finally {
       setLoading(false);
     }
   }
 
+  function formatDateFromIsoSP(isoStr) {
+    try {
+      const date = new Date(isoStr);
+      return new Intl.DateTimeFormat('pt-BR', {
+        timeZone: TIMEZONE,
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short'
+      }).format(date);
+    } catch (e) {
+      return isoStr.substring(0, 10);
+    }
+  }
+
+  function formatTimeRangeSP(startIso, endIso) {
+    try {
+      const start = new Date(startIso);
+      const end = new Date(endIso);
+      const fmt = new Intl.DateTimeFormat('pt-BR', {
+        timeZone: TIMEZONE,
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      return `${fmt.format(start)} às ${fmt.format(end)}`;
+    } catch (e) {
+      return '';
+    }
+  }
+
   // --------------------------------------------------------------------------
-  // SUPABASE REALTIME: SINCRONIZAÇÃO INSTANTÂNEA E INDICADOR VISUAL
+  // ABA: ADMINISTRAÇÃO COMPLETA (HORÁRIOS, BLOQUEIOS E PROFISSIONAIS)
   // --------------------------------------------------------------------------
 
-  function setupRealtime() {
+  function initAdminTabs() {
+    document.getElementById('subtabBtnHours')?.addEventListener('click', () => switchAdminSubTab('hours'));
+    document.getElementById('subtabBtnBlocks')?.addEventListener('click', () => switchAdminSubTab('blocks'));
+    document.getElementById('subtabBtnUsers')?.addEventListener('click', () => switchAdminSubTab('users'));
+    document.getElementById('adminHoursSpaceSelect')?.addEventListener('change', (e) => loadAdminHoursForSpace(e.target.value));
+    document.getElementById('btnSaveOperatingHours')?.addEventListener('click', handleSaveOperatingHours);
+  }
+
+  function switchAdminSubTab(subTab) {
+    state.adminSubTab = subTab;
+    const btnHours = document.getElementById('subtabBtnHours');
+    const btnBlocks = document.getElementById('subtabBtnBlocks');
+    const btnUsers = document.getElementById('subtabBtnUsers');
+    const secHours = document.getElementById('adminSectionHours');
+    const secBlocks = document.getElementById('adminSectionBlocks');
+    const secUsers = document.getElementById('adminSectionUsers');
+
+    if (btnHours) btnHours.classList.toggle('active', subTab === 'hours');
+    if (btnBlocks) btnBlocks.classList.toggle('active', subTab === 'blocks');
+    if (btnUsers) btnUsers.classList.toggle('active', subTab === 'users');
+
+    if (secHours) secHours.style.display = subTab === 'hours' ? 'block' : 'none';
+    if (secBlocks) secBlocks.style.display = subTab === 'blocks' ? 'block' : 'none';
+    if (secUsers) secUsers.style.display = subTab === 'users' ? 'block' : 'none';
+
+    if (subTab === 'hours') {
+      populateAdminHoursSpaceSelect();
+    } else if (subTab === 'blocks') {
+      loadAdminBlocks();
+    } else if (subTab === 'users') {
+      loadAdminUsers();
+    }
+  }
+
+  function populateAdminHoursSpaceSelect() {
+    const sel = document.getElementById('adminHoursSpaceSelect');
+    if (!sel) return;
+    sel.innerHTML = '';
+    state.spaces.forEach(sp => {
+      const opt = document.createElement('option');
+      opt.value = sp.id;
+      opt.textContent = sp.name;
+      sel.appendChild(opt);
+    });
+
+    const targetSpace = state.selectedSpaceId || (state.spaces[0] ? state.spaces[0].id : null);
+    if (targetSpace) {
+      sel.value = targetSpace;
+      loadAdminHoursForSpace(targetSpace);
+    }
+  }
+
+  async function loadAdminHoursForSpace(spaceId) {
+    const wrap = document.getElementById('adminHoursTableWrap');
+    if (!wrap) return;
+
+    wrap.innerHTML = `
+      <div class="pa-loading-indicator">
+        <div class="pa-spinner"></div>
+        <span>Carregando horários da sala...</span>
+      </div>
+    `;
+
     const client = getSupabaseClient();
     if (!client) return;
 
-    unsubscribeRealtime();
-    updateRealtimeStatus('connecting');
-
     try {
-      state.realtimeChannel = client
-        .channel('espaco-ligia-schedule-realtime')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'reservations' },
-          (payload) => {
-            handleRealtimeEvent('reservations', payload);
-          }
-        )
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'space_blocks' },
-          (payload) => {
-            handleRealtimeEvent('space_blocks', payload);
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            updateRealtimeStatus('connected');
-          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
-            updateRealtimeStatus('disconnected');
+      const { data, error } = await client
+        .from('operating_hours')
+        .select('*')
+        .eq('space_id', spaceId)
+        .order('day_of_week', { ascending: true });
+
+      if (error) {
+        wrap.innerHTML = `<div class="pa-alert pa-alert-error">Erro ao carregar horários: ${error.message}</div>`;
+        return;
+      }
+
+      const daysNames = [
+        'Domingo',
+        'Segunda-feira',
+        'Terça-feira',
+        'Quarta-feira',
+        'Quinta-feira',
+        'Sexta-feira',
+        'Sábado'
+      ];
+
+      let html = '';
+      for (let day = 0; day <= 6; day++) {
+        const existing = (data || []).find(d => d.day_of_week === day);
+        const isOpen = existing ? existing.is_open : (day >= 1 && day <= 6);
+        const openTime = existing ? existing.opening_time.substring(0, 5) : '07:00';
+        const closeTime = existing ? existing.closing_time.substring(0, 5) : (day === 6 ? '13:00' : '21:00');
+
+        html += `
+          <div class="pa-hours-day-row" data-day="${day}">
+            <div class="pa-hours-day-info">
+              <input type="checkbox" id="checkDay_${day}" class="pa-checkbox" ${isOpen ? 'checked' : ''} />
+              <label for="checkDay_${day}" class="pa-hours-day-label">${daysNames[day]}</label>
+            </div>
+            <div class="pa-hours-inputs">
+              <input type="time" class="pa-hours-time-input pa-open-time" value="${openTime}" ${isOpen ? '' : 'disabled'} />
+              <span style="font-size: 0.8125rem; color: #64748B;">até</span>
+              <input type="time" class="pa-hours-time-input pa-close-time" value="${closeTime}" ${isOpen ? '' : 'disabled'} />
+            </div>
+          </div>
+        `;
+      }
+
+      wrap.innerHTML = html;
+
+      wrap.querySelectorAll('.pa-checkbox').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const row = e.target.closest('.pa-hours-day-row');
+          if (row) {
+            row.querySelectorAll('.pa-hours-time-input').forEach(input => {
+              input.disabled = !e.target.checked;
+            });
           }
         });
-    } catch (err) {
-      console.error('[Espaço Ligia] Erro ao subscrever Realtime:', err);
-      updateRealtimeStatus('error');
-    }
-  }
-
-  function unsubscribeRealtime() {
-    if (state.realtimeChannel && state.supabaseClient) {
-      try {
-        state.supabaseClient.removeChannel(state.realtimeChannel);
-      } catch (e) {}
-      state.realtimeChannel = null;
-    }
-    updateRealtimeStatus('disconnected');
-  }
-
-  function handleRealtimeEvent(table, payload) {
-    // Alerta discreto na interface
-    showRealtimeNotification('A agenda de espaços foi atualizada em tempo real.');
-
-    // Atualiza disponibilidade silenciosamente
-    refreshSchedule();
-    if (state.currentTab === 'my_reservations') {
-      loadMyReservations();
-    }
-  }
-
-  function updateRealtimeStatus(status) {
-    state.realtimeStatus = status;
-    const badge = document.getElementById('realtimeStatusBadge');
-    if (!badge) return;
-
-    if (status === 'connected') {
-      badge.innerHTML = `<span class="pa-dot pa-dot-live"></span> Conectado em tempo real`;
-      badge.className = 'pa-realtime-badge pa-rt-connected';
-      badge.title = 'Sincronização atômica ativa com o banco PostgreSQL';
-    } else if (status === 'connecting') {
-      badge.innerHTML = `<span class="pa-dot pa-dot-connecting"></span> Reconectando...`;
-      badge.className = 'pa-realtime-badge pa-rt-connecting';
-    } else {
-      badge.innerHTML = `<span class="pa-dot pa-dot-off"></span> Offline (clique para sincronizar)`;
-      badge.className = 'pa-realtime-badge pa-rt-offline';
-      badge.onclick = () => {
-        setupRealtime();
-        refreshSchedule();
-      };
-    }
-  }
-
-  function showRealtimeNotification(msg) {
-    const banner = document.getElementById('realtimeNoticeBanner');
-    if (!banner) return;
-    banner.textContent = msg;
-    banner.classList.add('visible');
-    setTimeout(() => {
-      banner.classList.remove('visible');
-    }, 4500);
-  }
-
-  // --------------------------------------------------------------------------
-  // CONTROLES DE INTERFACE, ABAS E FORMULÁRIOS
-  // --------------------------------------------------------------------------
-
-  function showPanel(panelId) {
-    const panels = ['panelLogin', 'panelForgotPassword', 'panelDashboard', 'panelConfigHelp'];
-    panels.forEach(id => {
-      const p = document.getElementById(id);
-      if (p) p.style.display = (id === panelId) ? 'block' : 'none';
-    });
-  }
-
-  function switchTab(tabId) {
-    state.currentTab = tabId;
-    const tabSchedule = document.getElementById('tabContentSchedule');
-    const tabMy = document.getElementById('tabContentMyReservations');
-    const tabAdmin = document.getElementById('tabContentAdmin');
-
-    const btnSchedule = document.getElementById('tabBtnSchedule');
-    const btnMy = document.getElementById('tabBtnMyReservations');
-    const btnAdmin = document.getElementById('tabBtnAdmin');
-
-    if (tabSchedule) tabSchedule.style.display = (tabId === 'schedule') ? 'block' : 'none';
-    if (tabMy) tabMy.style.display = (tabId === 'my_reservations') ? 'block' : 'none';
-    if (tabAdmin) tabAdmin.style.display = (tabId === 'admin_blocks') ? 'block' : 'none';
-
-    if (btnSchedule) btnSchedule.classList.toggle('active', tabId === 'schedule');
-    if (btnMy) btnMy.classList.toggle('active', tabId === 'my_reservations');
-    if (btnAdmin) btnAdmin.classList.toggle('active', tabId === 'admin_blocks');
-
-    if (tabId === 'schedule') {
-      refreshSchedule();
-    } else if (tabId === 'my_reservations') {
-      loadMyReservations();
-    } else if (tabId === 'admin_blocks') {
-      loadAdminBlocks();
-    }
-  }
-
-  function renderUserHeader() {
-    const nameEl = document.getElementById('paUserFullName');
-    const roleEl = document.getElementById('paUserRoleBadge');
-    const adminTabBtn = document.getElementById('tabBtnAdmin');
-
-    if (nameEl && state.profile) {
-      nameEl.textContent = state.profile.full_name || 'Profissional';
-    }
-
-    if (roleEl && state.profile) {
-      const isAdmin = state.profile.role === 'admin';
-      roleEl.textContent = isAdmin ? 'Administrador' : 'Profissional';
-      roleEl.className = isAdmin ? 'pa-badge pa-badge-admin' : 'pa-badge pa-badge-pro';
-      
-      // Aba administrativa visível apenas para perfil admin
-      if (adminTabBtn) {
-        adminTabBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-      }
-    }
-  }
-
-  function renderSpacesSelector() {
-    const container = document.getElementById('spacesPillsContainer');
-    if (!container) return;
-
-    container.innerHTML = state.spaces.map(s => `
-      <button type="button" class="pa-space-pill ${s.id === state.selectedSpaceId ? 'active' : ''}" data-id="${s.id}">
-        <span class="pa-space-dot"></span>
-        <span class="pa-space-name">${escapeHtml(s.name)}</span>
-      </button>
-    `).join('');
-
-    container.querySelectorAll('.pa-space-pill').forEach(pill => {
-      pill.addEventListener('click', () => {
-        state.selectedSpaceId = pill.getAttribute('data-id');
-        container.querySelectorAll('.pa-space-pill').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        refreshSchedule();
       });
-    });
+    } catch (err) {
+      wrap.innerHTML = `<div class="pa-alert pa-alert-error">Erro ao carregar: ${err.message}</div>`;
+    }
+  }
+
+  async function handleSaveOperatingHours() {
+    const spaceId = document.getElementById('adminHoursSpaceSelect')?.value;
+    const feedback = document.getElementById('hoursSaveFeedback');
+    if (!spaceId) return;
+
+    const rows = document.querySelectorAll('.pa-hours-day-row');
+    const upsertData = [];
+
+    for (const row of rows) {
+      const day = parseInt(row.getAttribute('data-day'), 10);
+      const isOpen = row.querySelector('.pa-checkbox').checked;
+      const openTime = row.querySelector('.pa-open-time').value || '07:00';
+      const closeTime = row.querySelector('.pa-close-time').value || '21:00';
+
+      if (isOpen && openTime >= closeTime) {
+        const dayLabel = row.querySelector('.pa-hours-day-label')?.textContent || 'do dia selecionado';
+        alert(`No dia ${dayLabel}, o horário de fechamento deve ser posterior ao de abertura.`);
+        return;
+      }
+
+      upsertData.push({
+        space_id: spaceId,
+        day_of_week: day,
+        is_open: isOpen,
+        opening_time: openTime + ':00',
+        closing_time: closeTime + ':00'
+      });
+    }
+
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    setLoading(true, 'Salvando horários da sala...');
+    try {
+      const { error } = await client
+        .from('operating_hours')
+        .upsert(upsertData, { onConflict: 'space_id,day_of_week' });
+
+      if (error) {
+        alert('Erro ao salvar horários: ' + error.message);
+        return;
+      }
+
+      showToast('Horários da sala salvos com sucesso no banco!');
+      if (feedback) {
+        feedback.style.display = 'inline';
+        feedback.textContent = 'Horários atualizados!';
+        setTimeout(() => { feedback.style.display = 'none'; }, 4000);
+      }
+
+      await loadOperatingHours();
+      if (state.selectedSpaceId === spaceId) {
+        await refreshSchedule();
+      }
+    } catch (err) {
+      console.error('[Espaço Ligia] Erro ao salvar horários:', err);
+      alert('Erro inesperado ao salvar horários.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function loadAdminBlocks() {
-    const client = getSupabaseClient();
-    if (!client || !state.profile || state.profile.role !== 'admin') return;
+    const container = document.getElementById('adminBlocksList');
+    if (!container) return;
 
-    const listEl = document.getElementById('adminBlocksList');
-    if (listEl) {
-      listEl.innerHTML = `<div class="pa-loading-indicator"><div class="pa-spinner"></div><span>Carregando bloqueios...</span></div>`;
-    }
+    container.innerHTML = `
+      <div class="pa-loading-indicator">
+        <div class="pa-spinner"></div>
+        <span>Carregando bloqueios...</span>
+      </div>
+    `;
+
+    const client = getSupabaseClient();
+    if (!client) return;
 
     try {
       const { data, error } = await client
@@ -1212,78 +1488,82 @@
           start_time,
           end_time,
           reason,
-          created_at,
-          spaces (name)
+          spaces ( name )
         `)
         .order('start_time', { ascending: false });
 
       if (error) {
-        if (listEl) listEl.innerHTML = `<div class="pa-alert pa-alert-error">${error.message}</div>`;
+        container.innerHTML = `<div class="pa-alert pa-alert-error">Erro ao listar bloqueios: ${error.message}</div>`;
         return;
       }
 
       state.adminBlocks = data || [];
       renderAdminBlocks();
     } catch (err) {
-      console.error('[Espaço Ligia] Falha ao listar bloqueios:', err);
+      container.innerHTML = `<div class="pa-alert pa-alert-error">Erro de conexão ao carregar bloqueios.</div>`;
     }
   }
 
   function renderAdminBlocks() {
-    const listEl = document.getElementById('adminBlocksList');
-    if (!listEl) return;
+    const container = document.getElementById('adminBlocksList');
+    if (!container) return;
 
     if (state.adminBlocks.length === 0) {
-      listEl.innerHTML = `<div class="pa-empty-state"><p>Nenhum bloqueio cadastrado pela administração.</p></div>`;
+      container.innerHTML = `<div class="pa-empty-state"><p>Nenhum bloqueio cadastrado.</p></div>`;
       return;
     }
 
-    let html = '<div class="pa-reservations-cards-col">';
-    state.adminBlocks.forEach(b => {
-      const spaceName = b.spaces ? b.spaces.name : 'Espaço';
-      const startFormatted = new Date(b.start_time).toLocaleString('pt-BR', { timeZone: TIMEZONE });
-      const endFormatted = new Date(b.end_time).toLocaleString('pt-BR', { timeZone: TIMEZONE });
+    let html = `<div class="pa-blocks-list">`;
+    state.adminBlocks.forEach(block => {
+      const spaceName = block.spaces?.name || 'Espaço';
+      const dateStr = formatDateFromIsoSP(block.start_time);
+      const timeStr = formatTimeRangeSP(block.start_time, block.end_time);
 
       html += `
-        <div class="pa-reservation-card pa-res-blocked">
-          <div class="pa-res-top-row">
-            <span class="pa-res-space">${escapeHtml(spaceName)}</span>
-            <span class="pa-badge pa-badge-blocked">Bloqueio</span>
+        <div class="pa-block-card">
+          <div class="pa-block-info">
+            <strong>${escapeHtml(block.title)}</strong> (${escapeHtml(spaceName)})
+            <div class="pa-block-time">${dateStr} · ${timeStr}</div>
+            ${block.reason ? `<div class="pa-block-reason">Motivo: ${escapeHtml(block.reason)}</div>` : ''}
           </div>
-          <div class="pa-res-datetime">
-            <strong>${escapeHtml(b.title)}</strong>
-            <span>${startFormatted} até ${endFormatted}</span>
-          </div>
-          ${b.reason ? `<div class="pa-res-notes">${escapeHtml(b.reason)}</div>` : ''}
-          <div class="pa-res-footer">
-            <button type="button" class="pa-btn pa-btn-danger-outline pa-btn-sm btn-delete-block" data-id="${b.id}">
-              Remover Bloqueio
-            </button>
-          </div>
+          <button type="button" class="pa-btn pa-btn-outline pa-btn-sm btn-delete-block" data-id="${block.id}">
+            Remover
+          </button>
         </div>
       `;
     });
-    html += '</div>';
-    listEl.innerHTML = html;
+    html += `</div>`;
+    container.innerHTML = html;
 
-    listEl.querySelectorAll('.btn-delete-block').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = btn.getAttribute('data-id');
-        if (!confirm('Deseja remover este bloqueio administrativo?')) return;
-        const client = getSupabaseClient();
-        if (!client) return;
-
-        setLoading(true, 'Removendo bloqueio...');
-        try {
-          await client.from('space_blocks').delete().eq('id', id);
-          showToast('Bloqueio removido com sucesso!');
-          await loadAdminBlocks();
-          await refreshSchedule();
-        } finally {
-          setLoading(false);
+    container.querySelectorAll('.btn-delete-block').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const blockId = e.currentTarget.getAttribute('data-id');
+        if (confirm('Deseja realmente remover este bloqueio?')) {
+          await handleDeleteBlock(blockId);
         }
       });
     });
+  }
+
+  async function handleDeleteBlock(blockId) {
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    setLoading(true, 'Removendo bloqueio...');
+    try {
+      const { error } = await client.from('space_blocks').delete().eq('id', blockId);
+      if (error) {
+        alert('Erro ao excluir bloqueio: ' + error.message);
+        return;
+      }
+      showToast('Bloqueio removido com sucesso!');
+      await loadAdminBlocks();
+      await refreshSchedule();
+    } catch (err) {
+      alert('Erro ao remover bloqueio.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleCreateBlock(e) {
@@ -1314,7 +1594,11 @@
       });
 
       if (error) {
-        alert('Erro ao criar bloqueio: ' + error.message);
+        if (error.code === '23P01' || error.message.includes('reservas confirmadas')) {
+          alert('Não é possível criar o bloqueio: já existem reservas confirmadas no espaço para este período.');
+        } else {
+          alert('Erro ao criar bloqueio: ' + error.message);
+        }
         return;
       }
 
@@ -1326,6 +1610,327 @@
       console.error('[Espaço Ligia] Erro ao criar bloqueio:', err);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadAdminUsers() {
+    const container = document.getElementById('adminUsersListContainer');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="pa-loading-indicator">
+        <div class="pa-spinner"></div>
+        <span>Carregando profissionais cadastrados...</span>
+      </div>
+    `;
+
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    try {
+      const { data, error } = await client
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        container.innerHTML = `<div class="pa-alert pa-alert-error">Erro ao listar profissionais: ${error.message}</div>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML = `<div class="pa-empty-state"><p>Nenhum profissional encontrado.</p></div>`;
+        return;
+      }
+
+      let html = '<div class="pa-users-list">';
+      data.forEach(user => {
+        const isMe = user.id === state.session.user.id;
+        const statusBadge = user.is_active 
+          ? `<span class="pa-badge pa-badge-teal">Ativo</span>`
+          : `<span class="pa-badge" style="background: #FEF3C7; color: #92400E;">Pendente / Inativo</span>`;
+        const roleBadge = user.role === 'admin'
+          ? `<span class="pa-badge" style="background: #123D63; color: #FFFFFF;">Administrador</span>`
+          : `<span class="pa-badge" style="background: #E2E8F0; color: #334155;">Profissional</span>`;
+
+        html += `
+          <div class="pa-user-card">
+            <div class="pa-user-card-info">
+              <span class="pa-user-card-name">${escapeHtml(user.full_name)} ${isMe ? '(Você)' : ''}</span>
+              <div class="pa-user-card-badges">
+                ${statusBadge}
+                ${roleBadge}
+              </div>
+            </div>
+            <div class="pa-user-card-actions">
+              ${!user.is_active ? `
+                <button type="button" class="pa-btn-user-action activate" data-action="activate" data-id="${user.id}">
+                  Aprovar / Ativar
+                </button>
+              ` : (!isMe ? `
+                <button type="button" class="pa-btn-user-action deactivate" data-action="deactivate" data-id="${user.id}">
+                  Desativar
+                </button>
+              ` : '')}
+              ${!isMe ? (user.role === 'admin' ? `
+                <button type="button" class="pa-btn-user-action" data-action="demote" data-id="${user.id}">
+                  Tornar Profissional
+                </button>
+              ` : `
+                <button type="button" class="pa-btn-user-action" data-action="promote" data-id="${user.id}">
+                  Promover a Admin
+                </button>
+              `) : ''}
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+      container.innerHTML = html;
+
+      container.querySelectorAll('.pa-btn-user-action').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const action = e.currentTarget.getAttribute('data-action');
+          const id = e.currentTarget.getAttribute('data-id');
+          if (action === 'activate') {
+            await updateUserStatus(id, true);
+          } else if (action === 'deactivate') {
+            if (confirm('Deseja realmente desativar o acesso deste profissional?')) {
+              await updateUserStatus(id, false);
+            }
+          } else if (action === 'promote') {
+            if (confirm('Promover este profissional a Administrador?')) {
+              await updateUserRole(id, 'admin');
+            }
+          } else if (action === 'demote') {
+            if (confirm('Alterar o papel deste usuário para Profissional comum?')) {
+              await updateUserRole(id, 'professional');
+            }
+          }
+        });
+      });
+    } catch (err) {
+      container.innerHTML = `<div class="pa-alert pa-alert-error">Erro: ${err.message}</div>`;
+    }
+  }
+
+  async function updateUserStatus(userId, isActive) {
+    const client = getSupabaseClient();
+    if (!client) return;
+    setLoading(true, 'Atualizando status do profissional...');
+    try {
+      const { error } = await client
+        .from('profiles')
+        .update({ is_active: isActive, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+
+      if (error) {
+        alert('Erro ao atualizar status: ' + error.message);
+        return;
+      }
+
+      showToast(isActive ? 'Profissional aprovado e ativado!' : 'Profissional desativado.');
+      await loadAdminUsers();
+    } catch (err) {
+      alert('Erro: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function updateUserRole(userId, newRole) {
+    const client = getSupabaseClient();
+    if (!client) return;
+    setLoading(true, 'Atualizando permissões...');
+    try {
+      const { error } = await client
+        .from('profiles')
+        .update({ role: newRole, updated_at: new Date().toISOString() })
+        .eq('id', userId);
+
+      if (error) {
+        alert('Erro ao atualizar papel: ' + error.message);
+        return;
+      }
+
+      showToast(`Papel alterado para ${newRole === 'admin' ? 'Administrador' : 'Profissional'}.`);
+      await loadAdminUsers();
+    } catch (err) {
+      alert('Erro: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // NAVEGAÇÃO DE ABAS PRINCIPAIS
+  // --------------------------------------------------------------------------
+
+  function switchTab(tabName) {
+    state.currentTab = tabName;
+    const tabBtnSchedule = document.getElementById('tabBtnSchedule');
+    const tabBtnMyReservations = document.getElementById('tabBtnMyReservations');
+    const tabBtnAdmin = document.getElementById('tabBtnAdmin');
+
+    const contentSchedule = document.getElementById('tabContentSchedule');
+    const contentMyReservations = document.getElementById('tabContentMyReservations');
+    const contentAdmin = document.getElementById('tabContentAdmin');
+
+    if (tabBtnSchedule) {
+      tabBtnSchedule.classList.toggle('active', tabName === 'schedule');
+      tabBtnSchedule.setAttribute('aria-selected', tabName === 'schedule');
+    }
+    if (tabBtnMyReservations) {
+      tabBtnMyReservations.classList.toggle('active', tabName === 'my_reservations');
+      tabBtnMyReservations.setAttribute('aria-selected', tabName === 'my_reservations');
+    }
+    if (tabBtnAdmin) {
+      tabBtnAdmin.classList.toggle('active', tabName === 'admin');
+      tabBtnAdmin.setAttribute('aria-selected', tabName === 'admin');
+    }
+
+    if (contentSchedule) contentSchedule.style.display = tabName === 'schedule' ? 'block' : 'none';
+    if (contentMyReservations) contentMyReservations.style.display = tabName === 'my_reservations' ? 'block' : 'none';
+    if (contentAdmin) contentAdmin.style.display = tabName === 'admin' ? 'block' : 'none';
+
+    if (tabName === 'schedule') {
+      refreshSchedule();
+    } else if (tabName === 'my_reservations') {
+      loadMyReservations();
+    } else if (tabName === 'admin') {
+      switchAdminSubTab(state.adminSubTab || 'hours');
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // SUPABASE REALTIME: SINCRONIZAÇÃO EM TEMPO REAL ANÔNIMA E RESILIENTE
+  // --------------------------------------------------------------------------
+
+  function setupRealtime() {
+    const client = getSupabaseClient();
+    if (!client) return;
+
+    unsubscribeRealtime();
+    updateRealtimeStatus('connecting');
+
+    try {
+      state.realtimeChannel = client
+        .channel('espaco-ligia-realtime-channel')
+        // 1. Tabela anônima de revisões (notifica alterações de disponibilidade entre profissionais)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'availability_revisions' },
+          (payload) => {
+            console.log('[Espaço Ligia Realtime] Atualização de disponibilidade recebida:', payload);
+            handleRealtimeEvent('availability_revisions', payload);
+          }
+        )
+        // 2. Tabela de reservas (para atualizar "Minhas Reservas" do usuário)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'reservations' },
+          (payload) => {
+            handleRealtimeEvent('reservations', payload);
+          }
+        )
+        // 3. Tabela de bloqueios
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'space_blocks' },
+          (payload) => {
+            handleRealtimeEvent('space_blocks', payload);
+          }
+        )
+        // 4. Tabela de horários de funcionamento (recarrega agenda e horários)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'operating_hours' },
+          (payload) => {
+            handleRealtimeEvent('operating_hours', payload);
+          }
+        )
+        // 5. Tabela de espaços (recarrega status ativo da sala)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'spaces' },
+          (payload) => {
+            handleRealtimeEvent('spaces', payload);
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            updateRealtimeStatus('connected');
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            updateRealtimeStatus('disconnected');
+          }
+        });
+    } catch (err) {
+      console.error('[Espaço Ligia] Erro ao subscrever Realtime:', err);
+      updateRealtimeStatus('error');
+    }
+  }
+
+  function unsubscribeRealtime() {
+    if (state.realtimeChannel && state.supabaseClient) {
+      try {
+        state.supabaseClient.removeChannel(state.realtimeChannel);
+      } catch (e) {}
+      state.realtimeChannel = null;
+    }
+    updateRealtimeStatus('disconnected');
+  }
+
+  function handleRealtimeEvent(table, payload) {
+    if (!isModalOpen()) return;
+
+    // Se horários ou salas mudarem, recarrega catálogo e horários
+    if (table === 'operating_hours' || table === 'spaces') {
+      loadSpaces()
+        .then(() => loadOperatingHours())
+        .then(() => {
+          if (state.currentTab === 'schedule') {
+            refreshSchedule(true);
+          } else if (state.currentTab === 'admin' && state.adminSubTab === 'hours') {
+            renderAdminHoursView();
+          }
+        });
+      return;
+    }
+
+    // Se estiver na agenda, recarrega disponibilidade silenciosamente
+    if (state.currentTab === 'schedule') {
+      refreshSchedule(true);
+    }
+
+    // Se for reserva e estiver em Minhas Reservas, atualiza a lista
+    if (table === 'reservations' && state.currentTab === 'my_reservations') {
+      loadMyReservations();
+    }
+
+    // Se estiver na aba Admin e for bloqueio, atualiza lista de bloqueios
+    if (table === 'space_blocks' && state.currentTab === 'admin' && state.adminSubTab === 'blocks') {
+      loadAdminBlocks();
+    }
+  }
+
+  function updateRealtimeStatus(status) {
+    state.realtimeStatus = status;
+    const badge = document.getElementById('paRealtimeBadge');
+    if (!badge) return;
+
+    if (status === 'connected') {
+      badge.innerHTML = `<span class="pa-dot pa-dot-live"></span> Ao Vivo`;
+      badge.className = 'pa-realtime-badge pa-rt-live';
+    } else if (status === 'connecting') {
+      badge.innerHTML = `<span class="pa-dot pa-dot-connecting"></span> Conectando...`;
+      badge.className = 'pa-realtime-badge pa-rt-connecting';
+    } else {
+      badge.innerHTML = `<span class="pa-dot pa-dot-off"></span> Offline (clique para sincronizar)`;
+      badge.className = 'pa-realtime-badge pa-rt-offline';
+      badge.onclick = () => {
+        setupRealtime();
+        refreshSchedule();
+      };
     }
   }
 
@@ -1360,9 +1965,9 @@
     }, 3500);
   }
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str
+  function escapeHtml(text) {
+    if (!text) return '';
+    return String(text)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
@@ -1371,132 +1976,84 @@
   }
 
   // --------------------------------------------------------------------------
-  // INICIALIZAÇÃO DE EVENTOS DO DOCUMENTO
+  // INICIALIZAÇÃO E BINDING DE EVENTOS
   // --------------------------------------------------------------------------
 
   function initPrivateArea() {
-    // 1. Gatilho no rodapé: "Área dos profissionais"
-    const footerLink = document.getElementById('btnOpenPrivateArea');
-    if (footerLink) {
-      footerLink.addEventListener('click', (e) => {
+    // Gatilhos com [data-open-private-area] e id="btnOpenPrivateArea" (sem duplicações)
+    document.addEventListener('click', (e) => {
+      const trigger = e.target.closest('[data-open-private-area], #btnOpenPrivateArea');
+      if (trigger) {
         e.preventDefault();
-        openPrivateArea(footerLink);
-      });
-    }
+        openPrivateArea(trigger);
+        return;
+      }
 
-    // 2. Botão de fechar modal
-    const closeBtn = document.getElementById('closePrivateAreaModal');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', closePrivateArea);
-    }
+      const closeTrigger = e.target.closest('#btnClosePrivateArea, .btn-close-pa-panel');
+      if (closeTrigger) {
+        e.preventDefault();
+        closePrivateArea();
+        return;
+      }
+    });
 
-    // Fechar ao clicar no backdrop escuro
-    const modal = document.getElementById('privateAreaModal');
-    if (modal) {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          closePrivateArea();
-        }
-      });
-    }
+    document.getElementById('privateAreaBackdrop')?.addEventListener('click', (e) => {
+      if (e.target.id === 'privateAreaBackdrop' || e.target.id === 'privateAreaModal') {
+        closePrivateArea();
+      }
+    });
 
-    // Tecla Escape para fechar
+    // Tecla ESC para fechar
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        const pModal = document.getElementById('privateAreaModal');
-        if (pModal && pModal.classList.contains('active')) {
-          const bModal = document.getElementById('bookingModalDrawer');
-          if (bModal && bModal.classList.contains('active')) {
-            closeBookingModal();
-          } else {
-            closePrivateArea();
-          }
+      if (e.key === 'Escape' && isModalOpen()) {
+        const drawer = document.getElementById('bookingModalDrawer');
+        if (drawer && !drawer.hidden && drawer.style.display !== 'none') {
+          closeBookingModal();
+        } else {
+          closePrivateArea();
         }
       }
     });
 
-    // Formulário de Login
+    // Formulários de autenticação
     const loginForm = document.getElementById('paLoginForm');
     if (loginForm) {
-      loginForm.addEventListener('submit', handleLogin);
+      loginForm.addEventListener('submit', handleLoginSubmit);
     }
 
-    // Botão de Logout
-    const logoutBtn = document.getElementById('btnLogoutPA');
-    if (logoutBtn) {
-      logoutBtn.addEventListener('click', handleLogout);
-    }
-
-    // Link "Esqueci minha senha"
-    const forgotLink = document.getElementById('btnForgotPassword');
-    if (forgotLink) {
-      forgotLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        showPanel('panelForgotPassword');
-      });
-    }
-
-    // Voltar do Esqueci Minha Senha
-    const backToLoginBtn = document.getElementById('btnBackToLogin');
-    if (backToLoginBtn) {
-      backToLoginBtn.addEventListener('click', () => {
-        showPanel('panelLogin');
-      });
-    }
-
-    // Formulário de recuperação de senha
     const forgotForm = document.getElementById('paForgotPasswordForm');
     if (forgotForm) {
-      forgotForm.addEventListener('submit', handleForgotPassword);
+      forgotForm.addEventListener('submit', handleForgotPasswordSubmit);
     }
 
-    // Navegação entre abas
+    document.getElementById('btnGoToForgotPassword')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearAuthMessages();
+      showPanel('panelForgotPassword');
+    });
+
+    document.getElementById('btnBackToLogin')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      clearAuthMessages();
+      showPanel('panelLogin');
+    });
+
+    document.getElementById('btnLogoutPA')?.addEventListener('click', handleLogout);
+
+    // Navegação de abas do dashboard
     document.getElementById('tabBtnSchedule')?.addEventListener('click', () => switchTab('schedule'));
     document.getElementById('tabBtnMyReservations')?.addEventListener('click', () => switchTab('my_reservations'));
-    document.getElementById('tabBtnAdmin')?.addEventListener('click', () => switchTab('admin_blocks'));
+    document.getElementById('tabBtnAdmin')?.addEventListener('click', () => switchTab('admin'));
 
-    // Navegação de Datas
-    const dateInput = document.getElementById('scheduleDateInput');
-    if (dateInput) {
-      dateInput.value = state.selectedDate;
-      dateInput.min = getTodayDateStringSP();
-      dateInput.addEventListener('change', (e) => {
-        state.selectedDate = e.target.value;
-        refreshSchedule();
-      });
-    }
+    // Botão de refresh na agenda
+    document.getElementById('btnRefreshSchedule')?.addEventListener('click', () => refreshSchedule(false));
 
-    document.getElementById('btnPrevDay')?.addEventListener('click', () => {
-      const [y, m, d] = state.selectedDate.split('-').map(Number);
-      const prev = new Date(y, m - 1, d - 1, 12, 0, 0);
-      state.selectedDate = prev.toISOString().split('T')[0];
-      if (dateInput) dateInput.value = state.selectedDate;
-      refreshSchedule();
-    });
+    // Controles de data e administração
+    initDateControls();
+    initAdminTabs();
 
-    document.getElementById('btnNextDay')?.addEventListener('click', () => {
-      const [y, m, d] = state.selectedDate.split('-').map(Number);
-      const next = new Date(y, m - 1, d + 1, 12, 0, 0);
-      state.selectedDate = next.toISOString().split('T')[0];
-      if (dateInput) dateInput.value = state.selectedDate;
-      refreshSchedule();
-    });
-
-    document.getElementById('btnToday')?.addEventListener('click', () => {
-      state.selectedDate = getTodayDateStringSP();
-      if (dateInput) dateInput.value = state.selectedDate;
-      refreshSchedule();
-    });
-
-    // Botão de Atualização manual
-    document.getElementById('btnRefreshSchedule')?.addEventListener('click', () => {
-      refreshSchedule();
-      if (state.currentTab === 'my_reservations') loadMyReservations();
-      showToast('Agenda atualizada com o banco!');
-    });
-
-    // Formulário de Reserva Drawer
-    const bookingForm = document.getElementById('bookingDrawerForm');
+    // Formulário de reserva
+    const bookingForm = document.getElementById('bookingConfirmForm');
     if (bookingForm) {
       bookingForm.addEventListener('submit', handleConfirmBooking);
     }
@@ -1510,38 +2067,22 @@
       blockForm.addEventListener('submit', handleCreateBlock);
     }
 
-    // Configuração manual de chaves Supabase (se ainda estiver em placeholder)
-    const configForm = document.getElementById('paCustomConfigForm');
-    if (configForm) {
-      configForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const url = document.getElementById('customSupabaseUrl')?.value.trim();
-        const key = document.getElementById('customSupabaseKey')?.value.trim();
-        if (url && key) {
-          window.SUPABASE_CONFIG.saveCustomConfig(url, key);
-          state.supabaseClient = null;
-          showToast('Credenciais salvas com sucesso!');
-          checkAuthAndInit();
-        }
-      });
-    }
-
     // Resiliência de Conexão: Atualiza ao retornar para a aba ou restabelecer internet
     window.addEventListener('focus', () => {
-      if (document.getElementById('privateAreaModal')?.classList.contains('active')) {
-        refreshSchedule();
+      if (isModalOpen() && state.currentTab === 'schedule') {
+        refreshSchedule(true);
       }
     });
 
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible' && document.getElementById('privateAreaModal')?.classList.contains('active')) {
-        refreshSchedule();
+      if (document.visibilityState === 'visible' && isModalOpen() && state.currentTab === 'schedule') {
+        refreshSchedule(true);
       }
     });
 
     window.addEventListener('online', () => {
       setupRealtime();
-      refreshSchedule();
+      refreshSchedule(true);
     });
   }
 

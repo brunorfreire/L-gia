@@ -400,6 +400,14 @@ function initAssessmentModal() {
   if (modalBackdrop.dataset.initialized === 'true') return;
   modalBackdrop.dataset.initialized = 'true';
 
+  // Garante estado inicial 100% oculto no carregamento
+  if (!modalBackdrop.classList.contains('active')) {
+    modalBackdrop.setAttribute('hidden', '');
+    modalBackdrop.hidden = true;
+    modalBackdrop.style.display = 'none';
+    modalBackdrop.setAttribute('aria-hidden', 'true');
+  }
+
   // Elementos da Escala de Dor/Desconforto
   const painInput = document.getElementById('painRangeInput');
   const painCircle = document.getElementById('painScoreCircle');

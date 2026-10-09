@@ -441,20 +441,21 @@ ul, ol {
   display: none;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1180px) {
   .nav-desktop {
     display: flex;
     align-items: center;
-    gap: 1.75rem;
+    gap: 1.15rem;
   }
   
   .nav-link {
-    font-size: 0.9375rem;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--color-text-body);
     transition: color var(--transition-fast);
     position: relative;
     padding: 0.5rem 0;
+    white-space: nowrap;
   }
   
   .nav-link:hover,
@@ -480,6 +481,16 @@ ul, ol {
   }
 }
 
+@media (min-width: 1280px) {
+  .nav-desktop {
+    gap: 1.5rem;
+  }
+
+  .nav-link {
+    font-size: 0.9375rem;
+  }
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -500,7 +511,7 @@ ul, ol {
   padding: 8px;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1180px) {
   .nav-toggle-btn {
     display: none;
   }
@@ -989,14 +1000,29 @@ ul, ol {
 .institution-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 2.5rem;
+  gap: 1.5rem;
   align-items: center;
 }
 
 @media (min-width: 992px) {
   .institution-grid {
-    grid-template-columns: 0.95fr 1.05fr;
+    grid-template-columns: 0.92fr 1.08fr;
     gap: 3.5rem;
+  }
+}
+
+.institution-portrait-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+@media (min-width: 992px) {
+  .institution-portrait-wrapper {
+    max-width: 100%;
+    margin: 0;
   }
 }
 
@@ -1004,15 +1030,18 @@ ul, ol {
   position: relative;
   border-radius: var(--radius-2xl);
   overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid var(--color-border);
-  background-color: var(--color-bg-muted);
-  aspect-ratio: 4 / 3;
+  box-shadow: 0 16px 36px -10px rgba(18, 61, 99, 0.16), 0 4px 12px -2px rgba(18, 61, 99, 0.06);
+  border: 1px solid rgba(18, 61, 99, 0.08);
+  background-color: #0F172A;
+  aspect-ratio: 3 / 4;
+  width: 100%;
 }
 
-@media (min-width: 992px) {
+@media (max-width: 639px) {
   .institution-photo-card {
-    aspect-ratio: 5 / 4;
+    border-radius: var(--radius-xl);
+    aspect-ratio: 3 / 4;
+    max-height: 460px;
   }
 }
 
@@ -1020,6 +1049,24 @@ ul, ol {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center 18%;
+  display: block;
+}
+
+.institution-photo-caption {
+  margin-top: 0.65rem;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #64748B;
+  letter-spacing: 0.02em;
+}
+
+@media (min-width: 992px) {
+  .institution-photo-caption {
+    text-align: left;
+    padding-left: 0.25rem;
+  }
 }
 
 .institution-panel {
@@ -2743,22 +2790,29 @@ body.modal-open {
    ========================================================================== */
 
 /* Regras de acessibilidade e sincronização de visibilidade do modal */
-[hidden] {
+[hidden],
+#assessmentModal:not(.active),
+.assessment-modal-backdrop:not(.active),
+.assessment-backdrop:not(.active),
+.modal-backdrop:not(.active),
+#assessmentModal[hidden],
+.assessment-modal-backdrop[hidden],
+.assessment-backdrop[hidden],
+.modal-backdrop[hidden] {
   display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
+#assessmentModal.active,
 .assessment-modal-backdrop.active,
 .assessment-backdrop.active,
 .modal-backdrop.active {
   display: flex !important;
   opacity: 1 !important;
   visibility: visible !important;
-}
-
-.assessment-modal-backdrop[hidden],
-.assessment-backdrop[hidden],
-.modal-backdrop[hidden] {
-  display: none !important;
+  pointer-events: auto !important;
 }
 
 /* Auditoria de largura e quebra natural em telas mobile (<= 768px) */
@@ -3009,17 +3063,70 @@ body.modal-open {
   font-size: 0.8125rem;
   font-weight: 500;
   text-decoration: none;
-  transition: color 0.2s ease, text-decoration 0.2s ease;
-  padding: 4px 6px;
-  border-radius: 4px;
+  transition: color 0.2s ease, text-decoration 0.2s ease, background-color 0.2s ease, outline-color 0.2s ease;
+  padding: 8px 10px;
+  min-height: 44px;
+  border-radius: 6px;
   display: inline-flex;
   align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
 }
 
-.footer-professional-link:hover,
-.footer-professional-link:focus {
+.footer-professional-link:hover {
   color: #43AEBB;
   text-decoration: underline;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.footer-professional-link:focus-visible {
+  outline: 2px solid #43AEBB;
+  outline-offset: 2px;
+  color: #43AEBB;
+}
+
+/* Link da Área dos Profissionais no Menu Desktop */
+.nav-link.nav-link-pro {
+  color: #123D63;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 6px;
+}
+
+.nav-link.nav-link-pro:hover {
+  color: var(--color-turquoise);
+}
+
+.nav-link.nav-link-pro:focus-visible {
+  outline: 2px solid var(--color-turquoise);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Link da Área dos Profissionais no Menu Mobile */
+.mobile-nav-link.mobile-nav-link-pro {
+  color: var(--color-blue-deep);
+  font-weight: 700;
+  background-color: rgba(67, 174, 187, 0.06);
+  padding: 0.875rem 1rem;
+  border-radius: 8px;
+  min-height: 48px;
+  margin-top: 0.5rem;
+  border-bottom: none;
+  cursor: pointer;
+}
+
+.mobile-nav-link.mobile-nav-link-pro:hover,
+.mobile-nav-link.mobile-nav-link-pro:focus {
+  background-color: rgba(67, 174, 187, 0.12);
+  color: var(--color-turquoise);
+}
+
+.mobile-nav-link.mobile-nav-link-pro:focus-visible {
+  outline: 2px solid var(--color-turquoise);
+  outline-offset: 2px;
 }
 
 /* Backdrop do Modal Principal */
@@ -4239,3 +4346,935 @@ body.modal-open {
     font-size: 0.75rem;
   }
 }
+
+/* Sub-abas Administrativas e Gestão Completa */
+.pa-admin-subtabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #E2E8F0;
+  padding-bottom: 0.5rem;
+  overflow-x: auto;
+}
+
+.pa-subtab-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748B;
+  padding: 0.5rem 0.85rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.pa-subtab-btn:hover {
+  color: #123D63;
+  background: #F1F5F9;
+}
+
+.pa-subtab-btn.active {
+  color: #123D63;
+  background: #E2E8F0;
+  font-weight: 700;
+}
+
+.pa-header-right-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pa-btn-refresh {
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pa-btn-refresh:hover {
+  background: #F8FAFC;
+  color: #123D63;
+  border-color: #94A3B8;
+}
+
+.pa-btn-refresh svg {
+  color: #0E9AA7;
+}
+
+/* Tabela e Grid de Horários por Dia */
+.pa-hours-table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+}
+
+.pa-hours-day-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.375rem;
+  padding: 0.6rem 0.85rem;
+  flex-wrap: wrap;
+}
+
+.pa-hours-day-info {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 130px;
+}
+
+.pa-hours-day-label {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #1E293B;
+}
+
+.pa-hours-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pa-hours-time-input {
+  border: 1px solid #CBD5E1;
+  border-radius: 0.375rem;
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8125rem;
+  color: #0F172A;
+  background: #FFFFFF;
+}
+
+.pa-hours-time-input:disabled {
+  background: #F1F5F9;
+  color: #94A3B8;
+  cursor: not-allowed;
+}
+
+/* Gestão de Profissionais */
+.pa-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.pa-user-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  flex-wrap: wrap;
+}
+
+.pa-user-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.pa-user-card-name {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: #0F172A;
+}
+
+.pa-user-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pa-user-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pa-btn-user-action {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.375rem;
+  border: 1px solid #CBD5E1;
+  background: #FFFFFF;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pa-btn-user-action:hover {
+  background: #F1F5F9;
+  color: #0F172A;
+}
+
+.pa-btn-user-action.activate {
+  background: #0E9AA7;
+  color: #FFFFFF;
+  border-color: #0E9AA7;
+}
+
+.pa-btn-user-action.activate:hover {
+  background: #123D63;
+  border-color: #123D63;
+}
+
+.pa-btn-user-action.deactivate {
+  background: #FFF1F2;
+  color: #BE123C;
+  border-color: #FECDD3;
+}
+
+.pa-btn-user-action.deactivate:hover {
+  background: #FFE4E6;
+}
+
+/* ============================================================================
+   19. CAMPANHA DO GUIA GRATUITO: "ROTINA MATINAL DE 7 MINUTOS"
+   - Seção Permanente antes do rodapé (.ebook-feature-section)
+   - Pop-up Elegante com Identidade Visual (.ebook-modal-backdrop)
+   - Paleta: Azul Profundo (#123D63), Turquesa (#43AEBB), Fundo Claro (#F8FAFC)
+   - 100% responsivo para 320px, 360px, 390px, 430px e desktop
+   - Inputs >= 16px para evitar zoom indesejado no iOS Safari
+   ============================================================================ */
+
+/* SEÇÃO PERMANENTE */
+.ebook-feature-section {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F1F8F9 100%);
+  padding: 5rem 0;
+  border-top: 1px solid rgba(67, 174, 187, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.ebook-banner-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(18, 61, 99, 0.08);
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 40px -15px rgba(18, 61, 99, 0.08), 0 0 0 1px rgba(67, 174, 187, 0.08);
+  padding: 2.5rem 2rem;
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  .ebook-banner-card {
+    padding: 3.5rem 3rem;
+  }
+}
+
+.ebook-banner-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+@media (min-width: 900px) {
+  .ebook-banner-grid {
+    grid-template-columns: 340px 1fr;
+    gap: 3.5rem;
+  }
+}
+
+/* Miniatura da Capa em CSS Puro */
+.ebook-visual-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ebook-cover-mockup {
+  width: 100%;
+  max-width: 320px;
+  background: linear-gradient(145deg, #123D63 0%, #0E2942 100%);
+  border-radius: 1.25rem;
+  padding: 2rem 1.5rem;
+  color: #FFFFFF;
+  box-shadow: 0 25px 45px -12px rgba(18, 61, 99, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease;
+}
+
+.ebook-cover-mockup:hover {
+  transform: translateY(-4px);
+}
+
+.ebook-cover-mockup::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(67, 174, 187, 0.3) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ebook-mockup-tag {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #43AEBB;
+  background: rgba(67, 174, 187, 0.15);
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  margin-bottom: 1rem;
+}
+
+.ebook-mockup-title {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #FFFFFF;
+  margin-bottom: 0.5rem;
+}
+
+.ebook-mockup-sub {
+  font-size: 0.8125rem;
+  color: #CBD5E1;
+  line-height: 1.4;
+  margin-bottom: 1.5rem;
+}
+
+.ebook-mockup-preview-list {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
+  padding: 0.875rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ebook-mockup-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: #E2E8F0;
+  font-weight: 500;
+}
+
+.ebook-mini-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #43AEBB;
+  color: #0E2942;
+  font-size: 0.625rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ebook-mockup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.75rem;
+  color: #94A3B8;
+}
+
+.ebook-pill-free {
+  color: #43AEBB;
+  font-weight: 700;
+}
+
+/* Coluna de Conteúdo da Seção */
+.ebook-content-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.ebook-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0E9AA7;
+  background: #EAF6F8;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  margin-bottom: 0.875rem;
+}
+
+.ebook-title {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 800;
+  color: #123D63;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 640px) {
+  .ebook-title {
+    font-size: 2.375rem;
+  }
+}
+
+.ebook-highlight {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0E9AA7;
+  margin: 0 0 1rem 0;
+}
+
+.ebook-desc {
+  font-size: 1rem;
+  color: #475569;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  max-width: 640px;
+}
+
+.ebook-benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 2rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ebook-benefits-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1E293B;
+  line-height: 1.45;
+}
+
+.ebook-benefits-list svg {
+  color: #0E9AA7;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.ebook-action-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .ebook-action-box {
+    flex-direction: row;
+    align-items: center;
+    gap: 1.25rem;
+  }
+}
+
+.ebook-support-text {
+  font-size: 0.8125rem;
+  color: #64748B;
+  font-weight: 500;
+}
+
+.ebook-legal-note {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 600px;
+}
+
+/* ============================================================================
+   MODAL / POPUP ELEGANTE DO EBOOK
+   ============================================================================ */
+.ebook-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(11, 37, 61, 0.74);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.ebook-modal-backdrop.active {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: flex !important;
+}
+
+.ebook-modal-card {
+  background: #FFFFFF;
+  border-radius: 1.5rem;
+  max-width: 540px;
+  width: 100%;
+  max-height: 90vh;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(18, 61, 99, 0.32), 0 0 0 1px rgba(18, 61, 99, 0.08);
+  transform: scale(0.96) translateY(12px);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ebook-modal-backdrop.active .ebook-modal-card {
+  transform: scale(1) translateY(0);
+}
+
+/* Cabeçalho do Modal */
+.ebook-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: #FFFFFF;
+  border-bottom: 1px solid #E2E8F0;
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  padding-right: 3.75rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.ebook-modal-header-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.ebook-modal-badge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0E9AA7;
+  background: #EAF6F8;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  width: fit-content;
+  margin-bottom: 0.4rem;
+}
+
+.ebook-modal-title {
+  font-family: var(--font-heading);
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: #123D63;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.2;
+}
+
+@media (min-width: 480px) {
+  .ebook-modal-title {
+    font-size: 1.5rem;
+  }
+}
+
+.ebook-modal-subtitle {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #0E9AA7;
+  margin: 0;
+}
+
+.ebook-modal-close-btn {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #E2E8F0;
+  background: #F8FAFC;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 12;
+}
+
+.ebook-modal-close-btn:hover {
+  background: #F1F5F9;
+  color: #123D63;
+  border-color: #CBD5E1;
+}
+
+.ebook-modal-close-btn:focus-visible {
+  outline: 2px solid #0E9AA7;
+  outline-offset: 2px;
+}
+
+/* Corpo com Rolagem Interna */
+.ebook-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+}
+
+.ebook-step-view {
+  display: flex;
+  flex-direction: column;
+}
+
+.ebook-modal-description {
+  font-size: 0.9375rem;
+  color: #475569;
+  line-height: 1.55;
+  margin: 0 0 1.25rem 0;
+}
+
+.ebook-benefits-box {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 1rem;
+  padding: 1.15rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.ebook-benefits-heading {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #123D63;
+  margin: 0 0 0.75rem 0;
+}
+
+.ebook-benefits-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.ebook-benefits-checklist li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.875rem;
+  color: #334155;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.ebook-benefits-checklist svg {
+  color: #0E9AA7;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+/* Formulário de Captação */
+.ebook-lead-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.ebook-form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.25rem;
+}
+
+.ebook-input-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #123D63;
+  margin-bottom: 0.4rem;
+}
+
+.ebook-req {
+  color: #E11D48;
+}
+
+.ebook-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 1rem;
+  font-size: 1rem; /* 16px mínimo para evitar zoom no iOS */
+  color: #1E293B;
+  background-color: #FFFFFF;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.ebook-input:focus {
+  outline: none;
+  border-color: #0E9AA7;
+  box-shadow: 0 0 0 3px rgba(14, 154, 167, 0.18);
+}
+
+.ebook-field-error {
+  font-size: 0.8125rem;
+  color: #E11D48;
+  margin-top: 0.35rem;
+  font-weight: 600;
+}
+
+.ebook-form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.ebook-submit-btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 50px;
+}
+
+.ebook-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: #64748B;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.6rem;
+  min-height: 44px;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.ebook-dismiss-btn:hover {
+  color: #1E293B;
+  text-decoration: underline;
+}
+
+.ebook-dismiss-btn:focus-visible {
+  outline: 2px solid #0E9AA7;
+  outline-offset: 2px;
+}
+
+.ebook-modal-support-text {
+  font-size: 0.8125rem;
+  color: #64748B;
+  text-align: center;
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+}
+
+.ebook-modal-disclaimer {
+  font-size: 0.75rem;
+  color: #94A3B8;
+  text-align: center;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* ETAPA 2: CONFIRMAÇÃO */
+.ebook-confirmed-banner {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.ebook-confirmed-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #EAF6F8;
+  color: #0E9AA7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.ebook-confirmed-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #123D63;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.3;
+}
+
+.ebook-confirmed-explanation {
+  font-size: 0.9375rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.ebook-confirmed-actions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin-bottom: 1.75rem;
+}
+
+.ebook-action-channel-btn {
+  width: 100%;
+  justify-content: center;
+  min-height: 52px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ebook-action-channel-btn.disabled {
+  opacity: 0.6;
+  pointer-events: none;
+  background-color: #94A3B8;
+  border-color: #94A3B8;
+}
+
+.ebook-download-notice {
+  font-size: 0.8125rem;
+  color: #B45309;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  line-height: 1.4;
+  margin: 0;
+  text-align: center;
+}
+
+/* Convite Secundário */
+.ebook-secondary-invite-card {
+  background: #F1F8F9;
+  border: 1px solid rgba(67, 174, 187, 0.25);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+@media (min-width: 480px) {
+  .ebook-secondary-invite-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.ebook-secondary-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.ebook-secondary-tag {
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0E9AA7;
+  margin-bottom: 0.2rem;
+}
+
+.ebook-secondary-prompt {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #123D63;
+  margin: 0 0 0.2rem 0;
+}
+
+.ebook-secondary-sub {
+  font-size: 0.8125rem;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* ============================================================================
+   RESPONSIVIDADE E ACESSIBILIDADE MOBILE (320px, 360px, 390px, 430px)
+   ============================================================================ */
+@media (max-width: 480px) {
+  .ebook-banner-card {
+    padding: 1.75rem 1.25rem;
+    border-radius: 1.25rem;
+  }
+
+  .ebook-modal-card {
+    border-radius: 1.25rem;
+    max-height: 94vh;
+    max-height: 94dvh;
+  }
+
+  .ebook-modal-header {
+    padding: 1.25rem 1.25rem 0.875rem 1.25rem;
+    padding-right: 3.5rem;
+  }
+
+  .ebook-modal-body {
+    padding: 1.25rem;
+  }
+
+  .ebook-modal-title {
+    font-size: 1.25rem;
+  }
+
+  .ebook-action-channel-btn {
+    font-size: 0.875rem;
+    padding: 0.75rem 0.875rem;
+  }
+}
+
+/* Redução de Movimento */
+@media (prefers-reduced-motion: reduce) {
+  .ebook-cover-mockup,
+  .ebook-modal-backdrop,
+  .ebook-modal-card {
+    transition: none !important;
+    transform: none !important;
+  }
+}
+
+
