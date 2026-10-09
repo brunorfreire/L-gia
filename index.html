@@ -1387,197 +1387,6 @@
   </a>
 
   <!-- ========================================================================
-       MODAL DE CAPTAÇÃO: EBOOK "ROTINA MATINAL DE 7 MINUTOS"
-       Popup elegante com identidade visual do Espaço Ligia de Mayor
-       Começa oculto no HTML, não polui o fluxo do rodapé e suporta fechamento acessível
-       ======================================================================== -->
-  <div 
-    class="ebook-modal-backdrop" 
-    id="ebookLeadModal" 
-    hidden 
-    style="display: none;" 
-    aria-hidden="true" 
-    role="dialog" 
-    aria-modal="true" 
-    aria-labelledby="ebookModalTitle"
-  >
-    <div class="ebook-modal-card" id="ebookLeadCard">
-      
-      <!-- Cabeçalho do Modal com Botão Fechar -->
-      <div class="ebook-modal-header">
-        <div class="ebook-modal-header-text">
-          <span class="ebook-modal-badge">GUIA ILUSTRADO GRATUITO</span>
-          <h2 class="ebook-modal-title" id="ebookModalTitle">Seu corpo acorda travado?</h2>
-          <p class="ebook-modal-subtitle">Comece a manhã com 7 minutos de cuidado.</p>
-        </div>
-        <button 
-          type="button" 
-          class="ebook-modal-close-btn" 
-          id="closeEbookModal" 
-          aria-label="Fechar pop-up do guia gratuito"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Corpo com Rolagem Interna -->
-      <div class="ebook-modal-body">
-        
-        <!-- ETAPA 1: CAPTAÇÃO (NOME) -->
-        <div id="ebookStepCapture" class="ebook-step-view">
-          <p class="ebook-modal-description">
-            Antes da correria, reserve um momento para você. Conheça 5 movimentos suaves de respiração e mobilidade para incluir na sua rotina ao acordar — com ilustrações e orientações simples.
-          </p>
-
-          <div class="ebook-benefits-box">
-            <h3 class="ebook-benefits-heading">O que você vai encontrar no material:</h3>
-            <ul class="ebook-benefits-checklist">
-              <li>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Uma sequência de apenas 7 minutos.</span>
-              </li>
-              <li>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Cinco movimentos explicados e ilustrados.</span>
-              </li>
-              <li>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Um primeiro passo para cuidar do seu movimento no dia a dia.</span>
-              </li>
-            </ul>
-          </div>
-
-          <form id="ebookLeadForm" class="ebook-lead-form" novalidate>
-            <div class="ebook-form-group">
-              <label for="ebookUserName" class="ebook-input-label">
-                Como podemos te chamar? <span class="ebook-req">*</span>
-              </label>
-              <input 
-                type="text" 
-                id="ebookUserName" 
-                name="first_name" 
-                class="ebook-input" 
-                placeholder="Ex.: Mariana" 
-                required 
-                autocomplete="given-name"
-                maxlength="50"
-              />
-              <span id="ebookNameError" class="ebook-field-error" style="display: none;" role="alert"></span>
-            </div>
-
-            <div class="ebook-form-actions">
-              <button type="submit" class="btn btn-turquoise btn-lg ebook-submit-btn" id="btnSubmitEbook">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                </svg>
-                <span>Quero meu guia gratuito</span>
-              </button>
-
-              <button type="button" class="ebook-dismiss-btn" id="btnDismissEbook">
-                Agora não
-              </button>
-            </div>
-
-            <p class="ebook-modal-support-text">
-              Gratuito. Para consultar no celular quando quiser.
-            </p>
-
-            <p class="ebook-modal-disclaimer">
-              Material educativo. Respeite seus limites; se houver dor ou dúvida, procure orientação profissional.
-            </p>
-          </form>
-        </div>
-
-        <!-- ETAPA 2: CONFIRMAÇÃO & ENTREGA -->
-        <div id="ebookStepConfirmed" class="ebook-step-view" style="display: none;">
-          <div class="ebook-confirmed-banner">
-            <div class="ebook-confirmed-icon" aria-hidden="true">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-            </div>
-            <h3 class="ebook-confirmed-title">Pronto! Escolha como prefere receber seu guia:</h3>
-            <p class="ebook-confirmed-explanation">
-              Envie a mensagem no WhatsApp para iniciar seu contato com a equipe. Você também pode baixar o guia agora.
-            </p>
-          </div>
-
-          <div class="ebook-confirmed-actions-grid">
-            <!-- Botão 1: WhatsApp Oficial -->
-            <a 
-              href="#" 
-              id="btnEbookWhatsApp" 
-              class="btn btn-whatsapp-green btn-lg ebook-action-channel-btn" 
-              target="_blank" 
-              rel="noopener noreferrer"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-              </svg>
-              <span>Abrir WhatsApp e solicitar meu guia</span>
-            </a>
-
-            <!-- Botão 2: Baixar PDF Direto -->
-            <a 
-              href="./assets/rotina-matinal-7-minutos.pdf" 
-              id="btnEbookDownload" 
-              class="btn btn-blue-deep btn-lg ebook-action-channel-btn" 
-              download="rotina-matinal-7-minutos.pdf"
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-              <span>Baixar o guia agora</span>
-            </a>
-
-            <!-- Aviso caso o download local aguarde publicação -->
-            <p id="ebookDownloadNotice" class="ebook-download-notice" style="display: none;"></p>
-          </div>
-
-          <!-- Convite Secundário para Cuidado Individualizado -->
-          <div class="ebook-secondary-invite-card">
-            <div class="ebook-secondary-text">
-              <span class="ebook-secondary-tag">ATENDIMENTO CLÍNICO</span>
-              <p class="ebook-secondary-prompt">Quer um cuidado individualizado?</p>
-              <p class="ebook-secondary-sub">Avaliação postural, Pilates clínico e alívio das causas de dores articulares com a Lígia em Copacabana.</p>
-            </div>
-            <button 
-              type="button" 
-              id="btnEbookToAssessment" 
-              class="btn btn-turquoise btn-sm"
-              aria-label="Fechar guia e abrir questionário Quero minha avaliação"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              <span>Quero minha avaliação</span>
-            </button>
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  </div>
-
-  <!-- ========================================================================
        MODAL DE AVALIAÇÃO INDIVIDUAL (QUESTIONÁRIO COMPLETO COM ROLAGEM ÚNICA)
        Inspirado na referência com cartões de seleção elegantes, escala de 0 a 10
        e envio formatado direto para o WhatsApp oficial 5521997172737
@@ -2412,6 +2221,198 @@
     <div class="pa-loading-box">
       <div class="pa-spinner"></div>
       <span id="paLoadingText">Processando operação no banco...</span>
+    </div>
+  </div>
+
+  <!-- ========================================================================
+       MODAL DE CAPTAÇÃO: EBOOK "ROTINA MATINAL DE 7 MINUTOS"
+       Popup elegante com identidade visual do Espaço Ligia de Mayor
+       Container direto no body, overlay position: fixed com z-index: 3000
+       Começa estritamente oculto no HTML e nunca aparece solto após o rodapé
+       ======================================================================== -->
+  <div 
+    class="ebook-modal-backdrop" 
+    id="ebookLeadModal" 
+    hidden 
+    style="display: none;" 
+    aria-hidden="true" 
+    role="dialog" 
+    aria-modal="true" 
+    aria-labelledby="ebookModalTitle"
+  >
+    <div class="ebook-modal-card" id="ebookLeadCard">
+      
+      <!-- Cabeçalho do Modal com Botão Fechar -->
+      <div class="ebook-modal-header">
+        <div class="ebook-modal-header-text">
+          <span class="ebook-modal-badge">GUIA ILUSTRADO GRATUITO</span>
+          <h2 class="ebook-modal-title" id="ebookModalTitle">Seu corpo acorda travado?</h2>
+          <p class="ebook-modal-subtitle">Comece a manhã com 7 minutos de cuidado.</p>
+        </div>
+        <button 
+          type="button" 
+          class="ebook-modal-close-btn" 
+          id="closeEbookModal" 
+          aria-label="Fechar pop-up do guia gratuito"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Corpo com Rolagem Interna -->
+      <div class="ebook-modal-body">
+        
+        <!-- ETAPA 1: CAPTAÇÃO (NOME) -->
+        <div id="ebookStepCapture" class="ebook-step-view">
+          <p class="ebook-modal-description">
+            Antes da correria, reserve um momento para você. Conheça 5 movimentos suaves de respiração e mobilidade para incluir na sua rotina ao acordar — com ilustrações e orientações simples.
+          </p>
+
+          <div class="ebook-benefits-box">
+            <h3 class="ebook-benefits-heading">O que você vai encontrar no material:</h3>
+            <ul class="ebook-benefits-checklist">
+              <li>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Uma sequência de apenas 7 minutos.</span>
+              </li>
+              <li>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Cinco movimentos explicados e ilustrados.</span>
+              </li>
+              <li>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                <span>Um primeiro passo para cuidar do seu movimento no dia a dia.</span>
+              </li>
+            </ul>
+          </div>
+
+          <form id="ebookLeadForm" class="ebook-lead-form" novalidate>
+            <div class="ebook-form-group">
+              <label for="ebookUserName" class="ebook-input-label">
+                Como podemos te chamar? <span class="ebook-req">*</span>
+              </label>
+              <input 
+                type="text" 
+                id="ebookUserName" 
+                name="first_name" 
+                class="ebook-input" 
+                placeholder="Ex.: Mariana" 
+                required 
+                autocomplete="given-name"
+                maxlength="50"
+              />
+              <span id="ebookNameError" class="ebook-field-error" style="display: none;" role="alert"></span>
+            </div>
+
+            <div class="ebook-form-actions">
+              <button type="submit" class="btn btn-turquoise btn-lg ebook-submit-btn" id="btnSubmitEbook">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span>Quero meu guia gratuito</span>
+              </button>
+
+              <button type="button" class="ebook-dismiss-btn" id="btnDismissEbook">
+                Agora não
+              </button>
+            </div>
+
+            <p class="ebook-modal-support-text">
+              Gratuito. Para consultar no celular quando quiser.
+            </p>
+
+            <p class="ebook-modal-disclaimer">
+              Material educativo. Respeite seus limites; se houver dor ou dúvida, procure orientação profissional.
+            </p>
+          </form>
+        </div>
+
+        <!-- ETAPA 2: CONFIRMAÇÃO & ENTREGA -->
+        <div id="ebookStepConfirmed" class="ebook-step-view" style="display: none;">
+          <div class="ebook-confirmed-banner">
+            <div class="ebook-confirmed-icon" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <h3 class="ebook-confirmed-title">Pronto! Escolha como prefere receber seu guia:</h3>
+            <p class="ebook-confirmed-explanation">
+              Envie a mensagem no WhatsApp para iniciar seu contato com a equipe. Você também pode baixar o guia agora.
+            </p>
+          </div>
+
+          <div class="ebook-confirmed-actions-grid">
+            <!-- Botão 1: WhatsApp Oficial -->
+            <a 
+              href="#" 
+              id="btnEbookWhatsApp" 
+              class="btn btn-whatsapp-green btn-lg ebook-action-channel-btn" 
+              target="_blank" 
+              rel="noopener noreferrer"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+              </svg>
+              <span>Abrir WhatsApp e solicitar meu guia</span>
+            </a>
+
+            <!-- Botão 2: Baixar PDF Direto -->
+            <a 
+              href="./assets/rotina-matinal-7-minutos.pdf" 
+              id="btnEbookDownload" 
+              class="btn btn-blue-deep btn-lg ebook-action-channel-btn" 
+              download="rotina-matinal-7-minutos.pdf"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+              <span>Baixar o guia agora</span>
+            </a>
+
+            <!-- Aviso caso o download local aguarde publicação -->
+            <p id="ebookDownloadNotice" class="ebook-download-notice" style="display: none;"></p>
+          </div>
+
+          <!-- Convite Secundário para Cuidado Individualizado -->
+          <div class="ebook-secondary-invite-card">
+            <div class="ebook-secondary-text">
+              <span class="ebook-secondary-tag">ATENDIMENTO CLÍNICO</span>
+              <p class="ebook-secondary-prompt">Quer um cuidado individualizado?</p>
+              <p class="ebook-secondary-sub">Avaliação postural, Pilates clínico e alívio das causas de dores articulares com a Lígia em Copacabana.</p>
+            </div>
+            <button 
+              type="button" 
+              id="btnEbookToAssessment" 
+              class="btn btn-turquoise btn-sm"
+              aria-label="Fechar guia e abrir questionário Quero minha avaliação"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              <span>Quero minha avaliação</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
   </div>
 
