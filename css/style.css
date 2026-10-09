@@ -4827,465 +4827,557 @@ body.modal-open {
 }
 
 /* ============================================================================
-   MODAL / POPUP ELEGANTE DO EBOOK
+   MODAL / POPUP ELEGANTE DO EBOOK ("ROTINA MATINAL DE 7 MINUTOS")
+   Camada fixa independente z-index: 99999, centralizado, card 440px
+   Prefixos exclusivos .ebook- para isolamento total contra conflitos
    ============================================================================ */
 .ebook-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(11, 37, 61, 0.78);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  z-index: 3000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.25s ease, visibility 0.25s ease;
+  position: fixed !important;
+  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  width: 100vw !important;
+  height: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  background-color: rgba(11, 37, 61, 0.78) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: opacity 0.25s ease, visibility 0.25s ease !important;
+}
+
+.ebook-modal-backdrop[hidden],
+.ebook-modal-backdrop:not(.active) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .ebook-modal-backdrop.active {
+  display: flex !important;
   opacity: 1 !important;
   visibility: visible !important;
-  display: flex !important;
+  pointer-events: auto !important;
 }
 
+/* Card Principal do Ebook */
 .ebook-modal-card {
-  background: #FFFFFF;
-  border-radius: 1.5rem;
-  max-width: 480px;
-  width: 100%;
-  max-height: 90vh;
-  max-height: 90dvh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(18, 61, 99, 0.35), 0 0 0 1px rgba(18, 61, 99, 0.08);
-  transform: scale(0.96) translateY(12px);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background: #FFFFFF !important;
+  border-radius: 24px !important;
+  max-width: 440px !important;
+  width: calc(100% - 32px) !important;
+  max-height: calc(100dvh - 32px) !important;
+  max-height: calc(100vh - 32px) !important;
+  margin: auto !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 24px 48px -12px rgba(18, 61, 99, 0.28), 0 0 0 1px rgba(18, 61, 99, 0.08) !important;
+  overflow: hidden !important;
+  transform: scale(0.96) translateY(10px) !important;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease !important;
 }
 
 .ebook-modal-backdrop.active .ebook-modal-card {
-  transform: scale(1) translateY(0);
+  transform: scale(1) translateY(0) !important;
 }
 
-/* Cabeçalho do Modal */
-.ebook-modal-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background-color: #FFFFFF;
-  border-bottom: 1px solid #E2E8F0;
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
-  padding-right: 3.75rem;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.ebook-modal-header-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.ebook-modal-badge {
-  display: inline-block;
-  font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #0E9AA7;
-  background: #EAF6F8;
-  padding: 0.2rem 0.6rem;
-  border-radius: 9999px;
-  width: fit-content;
-  margin-bottom: 0.4rem;
-}
-
-.ebook-modal-title {
-  font-family: var(--font-heading);
-  font-size: 1.375rem;
-  font-weight: 800;
-  color: #123D63;
-  margin: 0 0 0.25rem 0;
-  line-height: 1.2;
-}
-
-@media (min-width: 480px) {
-  .ebook-modal-title {
-    font-size: 1.5rem;
-  }
-}
-
-.ebook-modal-subtitle {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: #0E9AA7;
-  margin: 0;
-}
-
+/* Botão Fechar no Canto Superior Direito (Touch Target >= 44px) */
 .ebook-modal-close-btn {
-  position: absolute;
-  top: 1.25rem;
-  right: 1.25rem;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid #E2E8F0;
-  background: #F8FAFC;
-  color: #475569;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 12;
+  position: absolute !important;
+  top: 14px !important;
+  right: 14px !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  border-radius: 50% !important;
+  border: 1px solid #E2E8F0 !important;
+  background: #F8FAFC !important;
+  color: #475569 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  z-index: 25 !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  transition: all 0.2s ease !important;
 }
 
 .ebook-modal-close-btn:hover {
-  background: #F1F5F9;
-  color: #123D63;
-  border-color: #CBD5E1;
+  background: #F1F5F9 !important;
+  color: #123D63 !important;
+  border-color: #CBD5E1 !important;
+  transform: scale(1.05) !important;
 }
 
 .ebook-modal-close-btn:focus-visible {
-  outline: 2px solid #0E9AA7;
-  outline-offset: 2px;
+  outline: 2px solid #0E9AA7 !important;
+  outline-offset: 2px !important;
 }
 
-/* Corpo com Rolagem Interna */
+/* Corpo com Rolagem Interna Segura */
 .ebook-modal-body {
-  padding: 1.5rem;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  flex: 1;
+  padding: 24px !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  flex: 1 1 auto !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
 }
 
 .ebook-step-view {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
+/* Selo Pequeno */
+.ebook-modal-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  font-size: 0.6875rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #0E9AA7 !important;
+  background: #EAF6F8 !important;
+  border: 1px solid rgba(14, 154, 167, 0.15) !important;
+  padding: 0.25rem 0.65rem !important;
+  border-radius: 9999px !important;
+  width: fit-content !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Título */
+.ebook-modal-title {
+  font-family: var(--font-heading, 'Montserrat', sans-serif) !important;
+  font-size: clamp(1.625rem, 5.5vw, 1.875rem) !important;
+  font-weight: 800 !important;
+  color: #123D63 !important;
+  margin: 0 0 0.35rem 0 !important;
+  line-height: 1.22 !important;
+  letter-spacing: -0.02em !important;
+  padding-right: 44px !important;
+  box-sizing: border-box !important;
+  word-break: break-word !important;
+}
+
+/* Subtítulo */
+.ebook-modal-subtitle {
+  font-size: 0.9375rem !important;
+  font-weight: 700 !important;
+  color: #0E9AA7 !important;
+  margin: 0 0 0.5rem 0 !important;
+  line-height: 1.35 !important;
+}
+
+/* Descrição Concisa */
 .ebook-modal-description {
-  font-size: 0.9375rem;
-  color: #475569;
-  line-height: 1.55;
-  margin: 0 0 1.25rem 0;
+  font-size: 0.9375rem !important;
+  color: #475569 !important;
+  line-height: 1.5 !important;
+  margin: 0 0 0.875rem 0 !important;
 }
 
-.ebook-benefits-box {
-  background: #F8FAFC;
-  border: 1px solid #E2E8F0;
-  border-radius: 1rem;
-  padding: 1.15rem 1.25rem;
-  margin-bottom: 1.5rem;
+/* Linha de Benefícios Compactos */
+.ebook-benefits-compact-row {
+  display: flex !important;
+  gap: 0.5rem !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 1.15rem !important;
 }
 
-.ebook-benefits-heading {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #123D63;
-  margin: 0 0 0.75rem 0;
+.ebook-benefit-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  padding: 0.35rem 0.75rem !important;
+  background: #F0F9FA !important;
+  border: 1px solid #D1EBEF !important;
+  border-radius: 9999px !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  color: #0E9AA7 !important;
+  box-sizing: border-box !important;
 }
 
-.ebook-benefits-checklist {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.ebook-benefits-checklist li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  font-size: 0.875rem;
-  color: #334155;
-  line-height: 1.4;
-  font-weight: 500;
-}
-
-.ebook-benefits-checklist svg {
-  color: #0E9AA7;
-  flex-shrink: 0;
-  margin-top: 0.15rem;
+.ebook-benefit-pill svg {
+  flex-shrink: 0 !important;
+  color: #0E9AA7 !important;
 }
 
 /* Formulário de Captação */
 .ebook-lead-form {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .ebook-form-group {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 1.25rem;
+  display: flex !important;
+  flex-direction: column !important;
+  margin-bottom: 1rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .ebook-input-label {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #123D63;
-  margin-bottom: 0.4rem;
-}
-
-.ebook-req {
-  color: #E11D48;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  color: #123D63 !important;
+  margin-bottom: 0.4rem !important;
 }
 
 .ebook-input {
-  width: 100%;
-  height: 48px;
-  padding: 0 1rem;
-  font-size: 1rem; /* 16px mínimo para evitar zoom no iOS */
-  color: #1E293B;
-  background-color: #FFFFFF;
-  border: 1.5px solid #CBD5E1;
-  border-radius: 0.75rem;
-  transition: all 0.2s ease;
-  font-family: inherit;
+  width: 100% !important;
+  min-height: 48px !important;
+  height: 48px !important;
+  padding: 0 1rem !important;
+  font-size: 1rem !important; /* 16px para evitar auto-zoom no iOS Safari */
+  color: #1E293B !important;
+  background-color: #FFFFFF !important;
+  border: 1.5px solid #CBD5E1 !important;
+  border-radius: 12px !important;
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 .ebook-input:focus {
-  outline: none;
-  border-color: #0E9AA7;
-  box-shadow: 0 0 0 3px rgba(14, 154, 167, 0.18);
+  outline: none !important;
+  border-color: #0E9AA7 !important;
+  box-shadow: 0 0 0 3px rgba(14, 154, 167, 0.2) !important;
 }
 
 .ebook-field-error {
-  font-size: 0.8125rem;
-  color: #E11D48;
-  margin-top: 0.35rem;
-  font-weight: 600;
+  font-size: 0.8125rem !important;
+  color: #E11D48 !important;
+  margin-top: 0.35rem !important;
+  font-weight: 600 !important;
 }
 
 .ebook-form-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin-top: 0.25rem !important;
 }
 
+/* Botão Principal */
 .ebook-submit-btn {
-  width: 100%;
-  justify-content: center;
-  min-height: 50px;
+  width: 100% !important;
+  min-height: 52px !important;
+  height: 52px !important;
+  border-radius: 12px !important;
+  background: #0E9AA7 !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  font-size: 1rem !important;
+  font-family: inherit !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  box-shadow: 0 4px 14px rgba(14, 154, 167, 0.35) !important;
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
+  box-sizing: border-box !important;
 }
 
+.ebook-submit-btn:hover {
+  background: #0C8793 !important;
+  box-shadow: 0 6px 18px rgba(14, 154, 167, 0.45) !important;
+  transform: translateY(-1px) !important;
+}
+
+.ebook-submit-btn:active {
+  transform: translateY(0) !important;
+}
+
+.ebook-submit-btn:focus-visible {
+  outline: 2px solid #123D63 !important;
+  outline-offset: 2px !important;
+}
+
+/* Link Secundário "Agora não" */
 .ebook-dismiss-btn {
-  background: transparent;
-  border: none;
-  color: #64748B;
-  font-size: 0.875rem;
-  font-weight: 600;
-  padding: 0.6rem;
-  min-height: 44px;
-  cursor: pointer;
-  border-radius: 0.5rem;
-  transition: color 0.2s ease;
+  display: block !important;
+  width: fit-content !important;
+  margin: 0.75rem auto 0 auto !important;
+  background: transparent !important;
+  border: none !important;
+  color: #64748B !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+  min-height: 44px !important;
+  padding: 0.6rem 1rem !important;
+  border-radius: 8px !important;
+  transition: color 0.2s ease !important;
+  box-sizing: border-box !important;
 }
 
 .ebook-dismiss-btn:hover {
-  color: #1E293B;
-  text-decoration: underline;
+  color: #123D63 !important;
 }
 
 .ebook-dismiss-btn:focus-visible {
-  outline: 2px solid #0E9AA7;
-  outline-offset: 2px;
+  outline: 2px solid #0E9AA7 !important;
+  outline-offset: 2px !important;
 }
 
-.ebook-modal-support-text {
-  font-size: 0.8125rem;
-  color: #64748B;
-  text-align: center;
-  margin: 0 0 0.5rem 0;
-  font-weight: 500;
-}
-
+/* Nota Educativa Discreta */
 .ebook-modal-disclaimer {
-  font-size: 0.75rem;
-  color: #94A3B8;
-  text-align: center;
-  line-height: 1.45;
-  margin: 0;
+  font-size: 0.8125rem !important;
+  color: #64748B !important;
+  text-align: center !important;
+  line-height: 1.45 !important;
+  margin: 0.75rem 0 0 0 !important;
 }
 
-/* ETAPA 2: CONFIRMAÇÃO */
+/* ============================================================================
+   ETAPA 2: CONFIRMAÇÃO & ENTREGA
+   ============================================================================ */
 .ebook-confirmed-banner {
-  text-align: center;
-  margin-bottom: 1.5rem;
+  text-align: center !important;
+  margin-bottom: 1.25rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .ebook-confirmed-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #EAF6F8;
-  color: #0E9AA7;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1rem;
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 50% !important;
+  background: #EAF6F8 !important;
+  color: #0E9AA7 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 0.75rem !important;
 }
 
 .ebook-confirmed-title {
-  font-family: var(--font-heading);
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: #123D63;
-  margin: 0 0 0.5rem 0;
-  line-height: 1.3;
+  font-family: var(--font-heading, 'Montserrat', sans-serif) !important;
+  font-size: 1.1875rem !important;
+  font-weight: 800 !important;
+  color: #123D63 !important;
+  margin: 0 0 0.4rem 0 !important;
+  line-height: 1.3 !important;
 }
 
 .ebook-confirmed-explanation {
-  font-size: 0.9375rem;
-  color: #475569;
-  line-height: 1.5;
-  margin: 0;
+  font-size: 0.875rem !important;
+  color: #475569 !important;
+  line-height: 1.45 !important;
+  margin: 0 !important;
 }
 
 .ebook-confirmed-actions-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.875rem;
-  margin-bottom: 1.75rem;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+  margin-bottom: 1.25rem !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 .ebook-action-channel-btn {
-  width: 100%;
-  justify-content: center;
-  min-height: 52px;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
+  width: 100% !important;
+  min-height: 52px !important;
+  height: 52px !important;
+  border-radius: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.6rem !important;
+  text-decoration: none !important;
+  font-weight: 700 !important;
+  font-size: 0.9375rem !important;
+  font-family: inherit !important;
+  box-sizing: border-box !important;
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease !important;
+  border: none !important;
+}
+
+.btn-whatsapp-green.ebook-action-channel-btn {
+  background: #25D366 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3) !important;
+}
+
+.btn-whatsapp-green.ebook-action-channel-btn:hover {
+  background: #20BA5C !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.4) !important;
+}
+
+.btn-blue-deep.ebook-action-channel-btn {
+  background: #123D63 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(18, 61, 99, 0.25) !important;
+}
+
+.btn-blue-deep.ebook-action-channel-btn:hover {
+  background: #0D2C47 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 18px rgba(18, 61, 99, 0.35) !important;
 }
 
 .ebook-action-channel-btn.disabled {
-  opacity: 0.6;
-  pointer-events: none;
-  background-color: #94A3B8;
-  border-color: #94A3B8;
+  opacity: 0.6 !important;
+  pointer-events: none !important;
+  background-color: #94A3B8 !important;
+  border-color: #94A3B8 !important;
+  box-shadow: none !important;
 }
 
 .ebook-download-notice {
-  font-size: 0.8125rem;
-  color: #B45309;
-  background: #FFFBEB;
-  border: 1px solid #FDE68A;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  line-height: 1.4;
-  margin: 0;
-  text-align: center;
+  font-size: 0.8125rem !important;
+  color: #B45309 !important;
+  background: #FFFBEB !important;
+  border: 1px solid #FDE68A !important;
+  padding: 0.75rem !important;
+  border-radius: 8px !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
 }
 
-/* Convite Secundário */
+/* Convite Secundário: Cuidado Individualizado */
 .ebook-secondary-invite-card {
-  background: #F1F8F9;
-  border: 1px solid rgba(67, 174, 187, 0.25);
-  border-radius: 1rem;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  align-items: flex-start;
+  background: #F1F8F9 !important;
+  border: 1px solid rgba(67, 174, 187, 0.25) !important;
+  border-radius: 16px !important;
+  padding: 1rem 1.15rem !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.75rem !important;
+  align-items: flex-start !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
 }
 
-@media (min-width: 480px) {
+@media (min-width: 440px) {
   .ebook-secondary-invite-card {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
   }
 }
 
 .ebook-secondary-text {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .ebook-secondary-tag {
-  font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #0E9AA7;
-  margin-bottom: 0.2rem;
+  font-size: 0.6875rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: #0E9AA7 !important;
+  margin-bottom: 0.15rem !important;
 }
 
 .ebook-secondary-prompt {
-  font-family: var(--font-heading);
-  font-size: 1rem;
-  font-weight: 700;
-  color: #123D63;
-  margin: 0 0 0.2rem 0;
+  font-family: var(--font-heading, 'Montserrat', sans-serif) !important;
+  font-size: 0.9375rem !important;
+  font-weight: 700 !important;
+  color: #123D63 !important;
+  margin: 0 0 0.15rem 0 !important;
 }
 
 .ebook-secondary-sub {
-  font-size: 0.8125rem;
-  color: #64748B;
-  margin: 0;
-  line-height: 1.4;
+  font-size: 0.75rem !important;
+  color: #64748B !important;
+  margin: 0 !important;
+  line-height: 1.35 !important;
+}
+
+#btnEbookToAssessment {
+  min-height: 42px !important;
+  border-radius: 10px !important;
+  background: #0E9AA7 !important;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
+  font-size: 0.8125rem !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  padding: 0.5rem 0.85rem !important;
+  flex-shrink: 0 !important;
+  transition: background-color 0.2s ease !important;
+  font-family: inherit !important;
+}
+
+#btnEbookToAssessment:hover {
+  background: #0C8793 !important;
 }
 
 /* ============================================================================
    RESPONSIVIDADE E ACESSIBILIDADE MOBILE (320px, 360px, 390px, 430px)
    ============================================================================ */
-@media (max-width: 480px) {
-  .ebook-modal-backdrop {
-    padding: 1rem 16px;
-    padding-top: max(1rem, env(safe-area-inset-top));
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
-  }
-
-  .ebook-banner-card {
-    padding: 1.75rem 1.25rem;
-    border-radius: 1.25rem;
-  }
-
+@media (max-width: 440px) {
   .ebook-modal-card {
-    border-radius: 1.25rem;
-    width: 100%;
-    max-width: 100%;
-    max-height: 92vh;
-    max-height: 92dvh;
+    width: calc(100% - 32px) !important;
+    margin: 16px auto !important;
   }
-
-  .ebook-modal-header {
-    padding: 1.25rem 1rem 0.875rem 1rem;
-    padding-right: 3.5rem;
-  }
-
+  
   .ebook-modal-body {
-    padding: 1rem 1rem 1.25rem 1rem;
+    padding: 20px 18px !important;
   }
-
+  
   .ebook-modal-title {
-    font-size: 1.1875rem;
+    font-size: 1.625rem !important; /* 26px */
+    padding-right: 40px !important;
   }
+}
 
-  .ebook-modal-subtitle {
-    font-size: 0.875rem;
+@media (max-width: 360px) {
+  .ebook-modal-body {
+    padding: 18px 14px !important;
   }
-
-  .ebook-modal-description {
-    font-size: 0.875rem;
+  
+  .ebook-modal-title {
+    font-size: 1.5rem !important; /* 24px */
   }
-
+  
+  .ebook-benefits-compact-row {
+    flex-direction: column !important;
+    gap: 0.4rem !important;
+  }
+  
   .ebook-action-channel-btn {
-    font-size: 0.875rem;
-    padding: 0.75rem 0.875rem;
+    font-size: 0.875rem !important;
+    padding: 0.75rem !important;
   }
 }
 
@@ -5298,5 +5390,6 @@ body.modal-open {
     transform: none !important;
   }
 }
+
 
 

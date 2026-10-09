@@ -32,7 +32,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;0,800;1,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
   <!-- Folha de Estilos Modular CSS3 -->
-  <link rel="stylesheet" href="./css/style.css?v=ligia-20261005-03" />
+  <link rel="stylesheet" href="./css/style.css?v=ligia-20261009-03" />
 
   <!-- Dados Estruturados Schema.org (LocalBusiness / Fisioterapia) -->
   <script type="application/ld+json">
@@ -2242,70 +2242,67 @@
   >
     <div class="ebook-modal-card" id="ebookLeadCard">
       
-      <!-- Cabeçalho do Modal com Botão Fechar -->
-      <div class="ebook-modal-header">
-        <div class="ebook-modal-header-text">
-          <span class="ebook-modal-badge">GUIA ILUSTRADO GRATUITO</span>
-          <h2 class="ebook-modal-title" id="ebookModalTitle">Seu corpo acorda travado?</h2>
-          <p class="ebook-modal-subtitle">Comece a manhã com 7 minutos de cuidado.</p>
-        </div>
-        <button 
-          type="button" 
-          class="ebook-modal-close-btn" 
-          id="closeEbookModal" 
-          aria-label="Fechar pop-up do guia gratuito"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
+      <!-- Botão de Fechar no Canto Superior Direito (Touch Target >= 44px) -->
+      <button 
+        type="button" 
+        class="ebook-modal-close-btn" 
+        id="closeEbookModal" 
+        aria-label="Fechar pop-up do guia gratuito"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
 
       <!-- Corpo com Rolagem Interna -->
       <div class="ebook-modal-body">
         
-        <!-- ETAPA 1: CAPTAÇÃO (NOME) -->
+        <!-- ETAPA 1: CAPTAÇÃO COMPACTA -->
         <div id="ebookStepCapture" class="ebook-step-view">
+          
+          <!-- Selo Pequeno -->
+          <span class="ebook-modal-badge">GUIA ILUSTRADO GRATUITO</span>
+
+          <!-- Título Principal -->
+          <h2 class="ebook-modal-title" id="ebookModalTitle">Seu corpo acorda travado?</h2>
+
+          <!-- Subtítulo Acolhedor -->
+          <p class="ebook-modal-subtitle">7 minutos de cuidado para começar a manhã.</p>
+
+          <!-- Descrição Concisa -->
           <p class="ebook-modal-description">
-            Antes da correria, reserve um momento para você. Conheça 5 movimentos suaves de respiração e mobilidade para incluir na sua rotina ao acordar — com ilustrações e orientações simples.
+            Conheça 5 movimentos suaves de respiração e mobilidade, com ilustrações e orientações simples para sua rotina ao acordar.
           </p>
 
-          <div class="ebook-benefits-box">
-            <h3 class="ebook-benefits-heading">O que você vai encontrar no material:</h3>
-            <ul class="ebook-benefits-checklist">
-              <li>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Uma sequência de apenas 7 minutos.</span>
-              </li>
-              <li>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Cinco movimentos explicados e ilustrados.</span>
-              </li>
-              <li>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-                <span>Um primeiro passo para cuidar do seu movimento no dia a dia.</span>
-              </li>
-            </ul>
+          <!-- Dois Benefícios Compactos com Ícones Discretos -->
+          <div class="ebook-benefits-compact-row">
+            <div class="ebook-benefit-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>5 movimentos ilustrados</span>
+            </div>
+            <div class="ebook-benefit-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <span>Uma sequência de 7 minutos</span>
+            </div>
           </div>
 
           <form id="ebookLeadForm" class="ebook-lead-form" novalidate>
             <div class="ebook-form-group">
               <label for="ebookUserName" class="ebook-input-label">
-                Como podemos te chamar? <span class="ebook-req">*</span>
+                Como podemos te chamar?
               </label>
               <input 
                 type="text" 
                 id="ebookUserName" 
                 name="first_name" 
                 class="ebook-input" 
-                placeholder="Ex.: Mariana" 
+                placeholder="Seu primeiro nome" 
                 required 
                 autocomplete="given-name"
                 maxlength="50"
@@ -2314,8 +2311,8 @@
             </div>
 
             <div class="ebook-form-actions">
-              <button type="submit" class="btn btn-turquoise btn-lg ebook-submit-btn" id="btnSubmitEbook">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <button type="submit" class="ebook-submit-btn" id="btnSubmitEbook">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                 </svg>
@@ -2327,12 +2324,8 @@
               </button>
             </div>
 
-            <p class="ebook-modal-support-text">
-              Gratuito. Para consultar no celular quando quiser.
-            </p>
-
             <p class="ebook-modal-disclaimer">
-              Material educativo. Respeite seus limites; se houver dor ou dúvida, procure orientação profissional.
+              Material educativo. Respeite seus limites; em caso de dor ou dúvida, procure orientação profissional.
             </p>
           </form>
         </div>
@@ -2420,9 +2413,9 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./js/supabase-config.js?v=ligia-20261005-03"></script>
   <script src="./js/hero-config.js?v=ligia-20261005-03"></script>
-  <script src="./js/ebook-config.js?v=ligia-20261009-01"></script>
+  <script src="./js/ebook-config.js?v=ligia-20261009-02"></script>
   <script src="./js/main.js?v=ligia-20261005-03"></script>
-  <script src="./js/ebook-campaign.js?v=ligia-20261009-01"></script>
+  <script src="./js/ebook-campaign.js?v=ligia-20261009-04"></script>
   <script src="./js/private-area.js?v=ligia-20261005-03"></script>
 
 </body>
